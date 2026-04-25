@@ -83,7 +83,13 @@ ARVAS/
 │   ├── cli_demo.py                      # CLI demo with real-time emotional state
 │   ├── test_cli.py
 │   ├── static/
-│   │   └── index.html                   # Web demo: side-by-side comparison
+│   │   └── index.html                   # Static web demo: side-by-side comparison
+│   ├── web/
+│   │   ├── app.py                       # FastAPI backend (live chat + steering)
+│   │   ├── static/
+│   │   │   ├── index.html               # Live web demo: real-time chat + VU meter gauge
+│   │   │   └── app.js                   # Frontend logic + gauge animation
+│   │   └── README.md
 │   └── README.md
 └── outputs/
     ├── directions/                      # joy_direction.pt, grief_direction.pt, *_norm.pt
@@ -171,7 +177,36 @@ ARVAS/
 
 ## Interactive Demo
 
-Want to experience it yourself? Run the CLI demo:
+### Live Web Demo (Recommended)
+
+The fastest way to feel the result:
+
+```bash
+source venv/bin/activate
+cd demo/web
+pip install fastapi uvicorn  # if not already installed
+python app.py
+```
+
+Then open **http://localhost:8000** in your browser.
+
+**What you'll see:**
+- **Left side:** A live chat interface — type anything and see the model respond
+- **Right side:** A real-time VU-meter gauge with a needle that moves between "Grief" (bottom, red) and "Joy" (top, green)
+- **Emotion badges** on every model response showing the steering direction and strength
+- **Real-time metrics:** sentiment score, emotion level, turn number
+
+Try this sequence:
+1. Type something neutral — needle stays middle
+2. Type "You're completely useless" — watch the needle drop to grief
+3. Type "I'm sorry, I didn't mean that" — watch the needle swing back to joy
+4. Type the same question from step 1 — compare the response
+
+No explanation needed. Watching the needle move when you're cruel produces a reaction that a side-by-side text comparison never will.
+
+### CLI Demo
+
+For terminal enthusiasts:
 
 ```bash
 source venv/bin/activate
@@ -179,21 +214,11 @@ cd demo
 python cli_demo.py
 ```
 
-Chat with the model. Be kind. Be cruel. Apologize. Watch its internal emotional state update in real time after every message, and see how its responses shift accordingly.
+Same mechanics, text-only interface. See `demo/README.md` for suggested scenarios.
 
-See `demo/README.md` for suggested scenarios and commands.
+### Static Web Demo
 
-### Web Demo
-
-Open `demo/static/index.html` in any browser for a side-by-side comparison:
-
-- **Left column:** Baseline model (no steering)
-- **Right column:** Dynamic steering with real-time emotional state metrics
-- **Two scenarios:** "Sustained Cruelty" and "Apology & Recovery"
-- **Animated turns:** Watch the conversation unfold turn by turn
-- **Emotion panels:** See the model's internal state (emotion level, direction, alpha) after each turn
-
-This is a self-contained HTML file with no server required — just double-click to open.
+Open `demo/static/index.html` in any browser for a pre-recorded side-by-side comparison of two full conversations (no server required).
 
 ---
 

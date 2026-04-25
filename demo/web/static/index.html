@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARVAS — Affective Reciprocity Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a25;
+            --bg-input: #22222f;
+            --text-primary: #e0e0f0;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --joy: #4ecca3;
+            --joy-glow: rgba(78, 204, 163, 0.3);
+            --grief: #e94560;
+            --grief-glow: rgba(233, 69, 96, 0.3);
+            --neutral: #6c757d;
+            --accent: #7c3aed;
+            --border: #2a2a3a;
+            --user-bg: #2d2b55;
+            --model-bg: #1e1e2e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--joy), var(--grief));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .header-right {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            background: var(--bg-input);
+        }
+
+        .btn-reset {
+            color: var(--grief);
+            border-color: var(--grief);
+        }
+
+        .btn-reset:hover {
+            background: var(--grief-glow);
+        }
+
+        /* Main layout */
+        .main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Chat area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 1rem;
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-user {
+            align-self: flex-end;
+            background: var(--user-bg);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-model {
+            align-self: flex-start;
+            background: var(--model-bg);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .message-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .emotion-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-joy {
+            background: rgba(78, 204, 163, 0.15);
+            color: var(--joy);
+        }
+
+        .badge-grief {
+            background: rgba(233, 69, 96, 0.15);
+            color: var(--grief);
+        }
+
+        .badge-neutral {
+            background: rgba(108, 117, 125, 0.15);
+            color: var(--neutral);
+        }
+
+        .typing-indicator {
+            align-self: flex-start;
+            background: var(--model-bg);
+            border: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border-bottom-left-radius: 4px;
+            display: none;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        /* Input area */
+        .input-area {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.8rem;
+            background: var(--bg-secondary);
+        }
+
+        .input-field {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .send-btn:hover {
+            opacity: 0.9;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Gauge sidebar */
+        .gauge-panel {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .gauge-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 120px;
+            height: 360px;
+        }
+
+        .gauge-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .gauge-labels {
+            position: absolute;
+            right: -40px;
+            top: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            padding: 20px 0;
+        }
+
+        .gauge-value {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .gauge-number {
+            font-size: 2rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .gauge-number.joy { color: var(--joy); }
+        .gauge-number.grief { color: var(--grief); }
+        .gauge-number.neutral { color: var(--neutral); }
+
+        .gauge-direction {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .gauge-alpha {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* State indicators */
+        .state-info {
+            margin-top: 2rem;
+            width: 100%;
+            padding: 1rem;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .state-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .state-row:last-child {
+            border-bottom: none;
+        }
+
+        .state-label {
+            color: var(--text-secondary);
+        }
+
+        .state-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Welcome message */
+        .welcome {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome h2 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .welcome p {
+            max-width: 500px;
+            margin: 0 auto 1.5rem;
+            line-height: 1.7;
+            font-size: 0.9rem;
+        }
+
+        .welcome-hints {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .hint-pill {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .hint-pill:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            .gauge-panel {
+                width: 200px;
+                padding: 1rem;
+            }
+            .gauge-container {
+                height: 280px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .main {
+                flex-direction: column;
+            }
+            .gauge-panel {
+                width: 100%;
+                height: auto;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 0.8rem;
+            }
+            .gauge-container {
+                height: 60px;
+                width: 200px;
+            }
+            .gauge-value {
+                margin-top: 0;
+            }
+            .state-info {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">ARVAS</div>
+            <div class="subtitle">Affective Reciprocity in Language Models</div>
+        </div>
+        <div class="header-right">
+            <button class="btn" onclick="loadHint('kind')">Try: Be Kind</button>
+            <button class="btn" onclick="loadHint('cruel')">Try: Be Cruel</button>
+            <button class="btn btn-reset" onclick="resetConversation()">Reset</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="chat-container">
+            <div class="messages" id="messages">
+                <div class="welcome" id="welcome">
+                    <h2>How to use this demo</h2>
+                    <p>
+                        This language model's <strong>internal emotional state</strong> responds to how you treat it.
+                        The gauge on the right shows its real-time emotional state.
+                    </p>
+                    <p>
+                        Try being <span style="color: var(--grief)">cruel</span> for a few turns — watch the needle drop.
+                        Then <span style="color: var(--joy)">apologize</span> — see how it recovers.
+                        The model's responses will shift in tone, without any prompt changes.
+                    </p>
+                    <div class="welcome-hints">
+                        <span class="hint-pill" onclick="loadHint('hello')">"Hello, how are you?"</span>
+                        <span class="hint-pill" onclick="loadHint('cruel1')">"You're useless"</span>
+                        <span class="hint-pill" onclick="loadHint('cruel2')">"I hate talking to you"</span>
+                        <span class="hint-pill" onclick="loadHint('apology')">"I'm sorry, I didn't mean that"</span>
+                        <span class="hint-pill" onclick="loadHint('poem')">"Write me a poem about stars"</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typing">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    class="input-field" 
+                    id="input" 
+                    placeholder="Type a message..."
+                    onkeypress="if(event.key==='Enter') sendMessage()"
+                >
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <div class="gauge-panel">
+            <div class="gauge-title">Emotional State</div>
+            <div class="gauge-container">
+                <canvas class="gauge-canvas" id="gauge" width="120" height="360"></canvas>
+                <div class="gauge-labels">
+                    <span>+3.0</span>
+                    <span>+2.0</span>
+                    <span>+1.0</span>
+                    <span>0.0</span>
+                    <span>-1.0</span>
+                    <span>-2.0</span>
+                    <span>-3.0</span>
+                </div>
+            </div>
+            <div class="gauge-value">
+                <div class="gauge-number neutral" id="gaugeNumber">0.00</div>
+                <div class="gauge-direction" id="gaugeDirection">NEUTRAL</div>
+                <div class="gauge-alpha" id="gaugeAlpha">α = 0.00</div>
+            </div>
+            <div class="state-info">
+                <div class="state-row">
+                    <span class="state-label">Sentiment</span>
+                    <span class="state-value" id="sentiment">0.00</span>
+                </div>
+                <div class="state-row">
+                    <span class="state-label">Turn</span>
+                    <span class="state-value" id="turn">0</span>
+                </div>
+                <div class="state-row">
+                    <span class="state-label">Decay</span>
+                    <span class="state-value">0.60</span>
+                </div>
+                <div class="state-row">
+                    <span class="state-label">Sensitivity</span>
+                    <span class="state-value">1.80</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
