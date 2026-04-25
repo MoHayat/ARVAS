@@ -325,7 +325,7 @@ Some instruct-tuned models receive lighter RLHF/SL than others. Test models like
 ### Experiment 11: 14B+ Models
 Test on Qwen2.5-14B-Instruct (~29–32 GB in fp16, tight but feasible on 48 GB unified memory). At 14B, emotional shifts should be highly naturalistic with minimal template entrenchment. MLX framework may provide 72% speedup over raw Transformers on Apple Silicon.
 
-### Experiment 11: Human Evaluation Study
+### Experiment 12: Human Evaluation Study
 Conduct a formal study where human raters read steered vs. baseline transcripts and rate:
 - Perceived emotional state of the model (8-emotion Likert scale)
 - Helpfulness and eagerness
