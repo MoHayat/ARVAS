@@ -144,7 +144,13 @@ The web demo shows a live circular gauge. When you type "I'm absolutely furious!
 
 We extracted these 8 directions by having the model read 160 short stories — 20 per emotion — where characters experience joy, excitement, calm, boredom, sadness, fear, anger, or disgust without ever naming the feeling. We averaged the activations, removed shared semantics, and ran PCA to find the valence and arousal axes hiding inside the model's geometry.
 
-The entire pipeline is now architected for **7B-scale models** (Qwen2.5-7B-Instruct), where we expect the emotional shifts to be genuinely naturalistic rather than fighting through template entrenchment. All that's left is downloading the weights.
+The entire pipeline is now validated on **7B-scale models** (Qwen2.5-7B-Instruct). The emotional shifts are visible and distinct on creative prompts — joy produces "joyful hum" and "wondrous blast," anger produces "relentless downpour's bound" and "tempest's night." The 2D emotion wheel is alive.
+
+But we hit a surprising wall: **conversational prompts trigger "As an AI language model..." templates that block steering entirely.** We thought RLHF was the enemy. So we tested the base model (no RLHF at all).
+
+**The base model was worse.** Without alignment, the model couldn't generate coherent novel text at all. It just regurgitated repetitive training data — laptop troubleshooting, Chinese test questions, weather facts. No templates, but also no creativity. Steering had nothing to work with.
+
+**The insight: RLHF doesn't block steering — it enables the coherent generation that makes steering meaningful.** The templates are a side effect, but the solution isn't removing alignment. It's **prompt design.** Creative, open-ended prompts break the model out of template mode and into creative generation mode — the exact surface where steering vectors can express themselves.
 
 ---
 

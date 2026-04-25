@@ -123,6 +123,7 @@ ARVAS/
 | 6 | **Larger Models (1.5B)** | ✅ Complete | Tested on Qwen2.5-1.5B with MPS+fp16. 5-10x speedup over CPU. Middle layers (14-17) show better separability. Model more resistant to steering on templated prompts. |
 | 7 | **Multi-Emotion Spectrum** | ✅ Complete | Extracted 8 emotions covering all Circumplex quadrants. PCA yields near-orthogonal valence/arousal axes. 1.5B shows template entrenchment; geometry confirmed but naturalism requires larger model. |
 | 8 | **7B Steering** | ✅ Complete | Geometry is pristine (all emotions in correct quadrants at layer 14). Template entrenchment is STRONGER on 7B instruct-tuned models for conversational prompts. Creative prompts (poetry) unlock visible emotional differentiation. Steering is real and potent — it needs the right prompt surface to express. |
+| 8b | **Base vs Instruct** | ✅ Complete | Tested Qwen2.5-7B base model (no RLHF). **Finding: base models are worse for steering.** They have no template entrenchment but also no coherent generation — they fall into repetitive training-data loops. RLHF enables the creative generation surface that steering needs. Solution is prompt design on instruct models, not base models. |
 | 9 | LoRA Adapter Swapping | ⏳ Future Work | Compare activation steering vs. LoRA-based emotional state. |
 
 ---
@@ -190,6 +191,20 @@ ARVAS/
   - Calm → "gentle lullaby", "soothing all that's restless"
 - **Key insight**: The "holy shit" effect requires both **scale (7B+)** AND **prompt design that breaks template mode**. The steering vector is real and potent — it just can't express itself through the safety/alignment filter on conversational prompts.
 - **Hardware**: 7B fp16 ≈ 14–16 GB, fits comfortably in 48 GB unified memory. Model loads in ~2 seconds from cache on M4 Pro.
+
+### Experiment 8b: Base vs Instruct — The RLHF Question
+We tested the cofounder's hypothesis: *does removing RLHF (using a base model) eliminate template entrenchment and unlock stronger steering?*
+
+**Answer: No. Base models are worse for steering, not better.**
+
+| | Qwen2.5-7B-Instruct (RLHF) | Qwen2.5-7B (Base) |
+|---|---|---|
+| **Template entrenchment** | Yes — "As an AI..." on conversational prompts | No templates at all |
+| **Can generate novel text** | **Yes** — poetry, fiction, sensory descriptions | **No** — falls into repetitive training-data loops (laptop troubleshooting, Chinese test questions) |
+| **Steering visible** | **Yes** on creative prompts (joy = "joyful hum", anger = "tempest's night") | Barely — subtle word substitutions in repetitive text |
+| **Useful for affective reciprocity** | **Yes** | No |
+
+**Key finding: RLHF enables coherent generation, which is a prerequisite for meaningful steering.** The templates are a side effect, but removing alignment removes the very capability that makes steering visible. The solution is **creative prompt design** on instruct models, not base models.
 
 ### Recommended Parameters
 
@@ -293,7 +308,10 @@ Results, figures, and a detailed README are generated automatically in that expe
 ### Experiment 9: LoRA Adapter Swapping
 Train small LoRA adapters (r=8) on positive-affect and negative-affect text datasets. Dynamically load and blend adapters based on the accumulator state. Compare the qualitative difference between adapter-swap and activation-steering approaches. Does the affective reciprocity effect hold across different intervention mechanisms?
 
-### Experiment 10: 14B+ Models
+### Experiment 10: Lightly-Aligned Models
+Some instruct-tuned models receive lighter RLHF/SL than others. Test models like Llama-3.1-8B-Instruct or Mistral-7B-Instruct-v0.3 to see if lighter alignment preserves more steerability on conversational prompts while still enabling coherent generation.
+
+### Experiment 11: 14B+ Models
 Test on Qwen2.5-14B-Instruct (~29–32 GB in fp16, tight but feasible on 48 GB unified memory). At 14B, emotional shifts should be highly naturalistic with minimal template entrenchment. MLX framework may provide 72% speedup over raw Transformers on Apple Silicon.
 
 ### Experiment 11: Human Evaluation Study

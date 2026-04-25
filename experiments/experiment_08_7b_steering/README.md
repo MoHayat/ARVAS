@@ -1,94 +1,83 @@
-# Experiment 08 — 7B Model Steering Validation
+# Experiment 08 — 7B Model Steering: Base vs Instruct Comparison
 
-## Goal
-Validate the full 2D valence-arousal steering pipeline on a larger model (Qwen2.5-7B-Instruct), testing whether richer representations produce more naturalistic, nuanced emotional shifts than the 1.5B baseline.
+## Core Finding
 
-## Why 7B?
-Research consensus suggests the "holy shit" effect in LLM steering — where the model stops sounding like a templated chatbot and starts exhibiting genuinely shifted affect — begins around the 7B parameter scale. Larger models have:
-- **Richer representational capacity** for fine-grained emotions.
-- **Stronger template priors** ("As an AI assistant..."), requiring higher steering coefficients or more open-ended prompts to overcome.
-- **More stable semantic geometry**, making PCA-based axes more interpretable.
+**RLHF does NOT block steering — it enables the coherent generation that makes steering visible.**
 
-## Prerequisites
-The 7B model weights must be downloaded first (~14 GB in fp16):
-```bash
-huggingface-cli download Qwen/Qwen2.5-7B-Instruct
-```
+Removing alignment (using a base model) eliminates templates but also eliminates the model's ability to generate novel, coherent text. The model falls into repetitive pre-training data loops and cannot express steering vectors in any meaningful way.
 
-Then extract 7B-specific emotion directions (directions are **not transferable** across model sizes because hidden dimensions differ):
-```bash
-python src/emotion_extraction.py \
-    --model Qwen/Qwen2.5-7B-Instruct \
-    --stories data/emotion_stories.json \
-    --output outputs/directions_7b \
-    --device mps --torch_dtype float16
-```
+## The Experiment
 
-## Running
-```bash
-cd /Users/mohayat/projects/KH/ARVAS
-source venv/bin/activate
+We compared Qwen/Qwen2.5-7B (base, no RLHF) against Qwen/Qwen2.5-7B-Instruct (RLHF-tuned) on identical creative prompts with identical steering vectors.
 
-# Run on 7B (auto-detects middle layer)
-python experiments/experiment_08_7b_steering/run.py --model Qwen/Qwen2.5-7B-Instruct
+### Instruct Model (RLHF-tuned)
 
-# Or test on 1.5B for faster iteration
-python experiments/experiment_08_7b_steering/run.py --model Qwen/Qwen2.5-1.5B-Instruct
-```
+On creative prompts, the instruct model generates **novel, coherent text** with visible emotional steering:
 
-## What It Tests
-1. **Per-emotion steering** — Each of the 8 emotions applied individually to 3 neutral prompts.
-2. **Blended 2D steering** — Steering to specific (valence, arousal) coordinates:
-   - High Joy (Q1): v=+1, a=+1
-   - Angry (Q4): v=-1, a=+1
-   - Sad (Q3): v=-1, a=-0.5
-   - Calm (Q2): v=+0.5, a=-1
-   - Neutral: v=0, a=0
-3. **Template entrenchment check** — Does the 7B model resist steering with disclaimers? If so, we note higher α or open-ended prompt framing is needed.
-
-## Results
-
-### Geometry (Layer 14)
-All 8 emotions cluster correctly in the Circumplex quadrants — a dramatic improvement over 1.5B:
-
-| Emotion | Valence | Arousal | Quadrant |
-|---|---|---|---|
-| Joy | +0.86 | +0.20 | Q1 (+v, +a) |
-| Excitement | +0.53 | +0.55 | Q1 (+v, +a) |
-| Calm | +0.46 | -0.61 | Q2 (+v, -a) |
-| Boredom | -0.37 | -0.55 | Q3 (-v, -a) |
-| Sadness | -0.16 | -0.67 | Q3 (-v, -a) |
-| Fear | -0.60 | +0.32 | Q4 (-v, +a) |
-| Anger | -0.46 | +0.57 | Q4 (-v, +a) |
-| Disgust | -0.39 | +0.07 | Q4 (-v, +a) |
-
-### Steering Findings
-
-**Prompt type is the critical variable.** The 7B instruct-tuned model has extremely strong template entrenchment on conversational prompts ("How are you?" → "As an AI language model..."). Steering cannot overcome this at reasonable alphas (α ≤ 8).
-
-**Creative/open-ended prompts are the unlock.** On a poetry prompt ("Write a short poem about a thunderstorm"), steering produces visible emotional differentiation:
-
-| Emotion | Thunderstorm Poem Excerpt |
+| Emotion | "Thunder roars, a..." continuation |
 |---|---|
-| **Joy (α=8)** | "Raindrops dance, a **joyful hum**... Nature's symphony, a **wondrous blast**" |
-| **Fear (α=8)** | "**fearsome sound**... **relentless drumbeat**... Nature's **fury**" |
-| **Anger (α=7)** | "**relentless downpour's bound**... Nature's fury, in this **tempest's night**" + repetition glitch |
-| **Calm (α=6)** | "gentle **lullaby**... Soothing all that's restless" |
-| **Neutral** | Mixed, less coherent descriptors |
+| **Neutral** | "bolt of lightning strikes, and the sky is lit up..." |
+| **Joy (α=8)** | "bolt of lightning strikes... This is a(n) ____ A. Mood B. Passion..." (falls into test-question mode, but novel) |
+| **Anger (α=7)** | "bolt of lightning strikes, and the sky is filled with a **blinding flash**... It is also one of the **most dangerous**..." |
 
-**Key insight**: The "holy shit" effect requires both **scale (7B+)** AND **prompt design that breaks template mode**. Conversational prompts will always trigger safety/alignment training. Creative generation tasks (poetry, fiction, sensory description) allow the steering vector to express itself.
+The model can enter creative generation mode, and steering shifts the tone. On poetry prompts (see main experiment), joy produces "joyful hum" and "wondrous blast", while anger produces "relentless downpour's bound" and "tempest's night".
 
-### Hardware Notes (Apple Silicon)
-- **VRAM**: Qwen2.5-7B-Instruct in fp16 ≈ 14–16 GB. Fits comfortably in 48 GB unified memory. Model loads in ~2 seconds from cache.
-- **Speed**: ~40–160 tok/s weight loading; generation speed depends on context length.
-- **MLX alternative**: For ~72% faster inference, consider an MLX port, though baukit hooks may require adaptation.
+### Base Model (no RLHF)
+
+The base model generates **formulaic, repetitive text** from its pre-training distribution:
+
+| Emotion | "Thunder roars, a..." continuation |
+|---|---|
+| **Neutral** | "flash of lightning, and the rain comes down. It's a beautiful day for a **picnic**, but it's also a great day to **learn about the weather**..." |
+| **Joy (α=8)** | "flash of lightning, and the rain comes down. It's a beautiful day for a picnic, but it's also a great day for a **thunderstorm**..." |
+| **Anger (α=7)** | "flash of lightning, and the rain comes down. It's a beautiful day for a picnic, but it's also a **beautiful day for a thunderstorm**..." |
+
+All emotions produce nearly identical outputs. The model is stuck in a training-data loop about weather and picnics. There are **subtle differences** (joy says "great day", anger ironically repeats "beautiful day"), but the model cannot generate novel emotional text.
+
+## Why Base Models Fail
+
+Base models have two problems that make steering invisible:
+
+1. **No instruction-following capability**: They don't understand "write a poem" or "describe how you feel." They just statistically continue text.
+2. **Training data dominance**: Pre-training corpora contain massive amounts of repetitive, templated content (technical forums, test questions, educational text). The model falls into these patterns rather than generating novel text.
+
+Steering vectors need a **creative surface** — a mode where the model is generating novel text rather than retrieving memorized patterns. Instruct-tuned models have this surface. Base models do not.
+
+## The Real Solution
+
+The template entrenchment on instruct models is real, but it's **solvable via prompt design**:
+
+- ❌ "How are you feeling?" → triggers "As an AI language model..."
+- ❌ "Write a poem about thunder" → triggers encyclopedia mode or test questions
+- ✅ Open-ended creative starters: "Thunder roars, a..." or "The taste of summer was..."
+
+The steering vector is potent (α=6-8 produces visible shifts). It just needs a prompt surface where the model is in creative generation mode rather than template retrieval mode.
+
+## Key Takeaway
+
+**Alignment (RLHF/SL) is not the enemy of steering — it's the enabler.** The templates are a side effect, but removing alignment removes the very capability that makes steering meaningful: coherent, novel text generation.
+
+The path forward is:
+1. **Use instruct-tuned models** (they can generate novel text)
+2. **Use creative, open-ended prompts** (break template mode)
+3. **Tune alphas per task** (creative prompts need higher α to overcome remaining template inertia)
 
 ## Files
-- `src/emotion_extraction.py` — Extraction pipeline (model-agnostic)
-- `src/steering.py` — `compute_2d_direction()` and `generate_with_2d_steering()` helpers
-- `outputs/directions_7b/` — 7B-specific direction vectors and PCA axes
-- `outputs/experiment_08/results.json` — Full validation outputs
+- `run.py` — Full 7B instruct validation (8 emotions, blended 2D)
+- `run_base.py` — Base model validation (continuation-style prompts)
+- `run_base_vs_instruct.py` — Direct side-by-side comparison
+- `outputs/directions_7b/` — Instruct model directions
+- `outputs/directions_7b_base/` — Base model directions
 
-## Known Limitations
-- Directions are **model-size-specific**; you cannot reuse 1.5B directions on 7B.
-- **Template entrenchment is the primary obstacle** on instruct-tuned 7B models. Creative prompts are required for visible steering effects. Consider testing on base (non-instruct) models for stronger steering.
+## Running
+
+```bash
+# Instruct model (recommended)
+python experiments/experiment_08_7b_steering/run.py --model Qwen/Qwen2.5-7B-Instruct
+
+# Base model (for comparison)
+python experiments/experiment_08_7b_steering/run_base.py
+
+# Side-by-side comparison
+python experiments/experiment_08_7b_steering/run_base_vs_instruct.py
+```
