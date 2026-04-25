@@ -1,13 +1,21 @@
 """
-ARVAS Live Web Demo — FastAPI Backend
+ARVAS Live Web Demo — FastAPI Backend (v2 Multi-Emotion)
 
-Serves a live chat interface with real-time emotional state visualization.
+Serves a live chat interface with real-time 2D emotional state visualization.
 The model is loaded once at startup and stays in memory for fast responses.
+
+Now supports 2D valence-arousal steering via the Circumplex Model.
+
+Configuration (env vars):
+    ARVAS_MODEL       — HuggingFace model name (default: Qwen/Qwen2.5-1.5B-Instruct)
+    ARVAS_DEVICE      — torch device (default: mps)
+    ARVAS_LAYER       — Specific layer to hook (default: auto-detected middle layer)
+    ARVAS_MAX_TOKENS  — Max generation length (default: 120)
 
 Usage:
     source venv/bin/activate
     cd demo/web
-    python app.py
+    ARVAS_MODEL=Qwen/Qwen2.5-7B-Instruct python app.py
 
 Then open http://localhost:8000 in your browser.
 """
@@ -28,32 +36,33 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional
 
 from contextlib import asynccontextmanager
-from activation_utils import load_model_and_tokenizer
-from steering import generate_with_steering
-from sentiment_trigger import SentimentTrigger
+from activation_utils import load_model_and_tokenizer, get_layer_names
+from steering import compute_2d_direction, generate_with_steering
+from sentiment_trigger import AffectiveTrigger
 
 # ------------------------------------------------------------------
-# Config
+# Config (override via environment variables)
 # ------------------------------------------------------------------
-MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"  # 0.5B for fast interactive responses
-DEVICE = "cpu"  # Use CPU for stability; change to "mps" if desired
-DTYPE = torch.float32
-MAX_NEW_TOKENS = 120
-TARGET_LAYER = "model.layers.10"
+MODEL_NAME = os.environ.get("ARVAS_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
+DEVICE = os.environ.get("ARVAS_DEVICE", "mps")
+DTYPE = torch.float16 if DEVICE in ("mps", "cuda") else torch.float32
+MAX_NEW_TOKENS = int(os.environ.get("ARVAS_MAX_TOKENS", "120"))
+TARGET_LAYER = os.environ.get("ARVAS_LAYER", "")  # empty = auto-detect middle layer
 
-# Load calibration
+# Steering calibration
+ALPHA_SCALE = 3.0
+
+# Load calibration (fallback defaults)
 CALIB_PATH = PROJECT_ROOT / "outputs" / "experiment_03" / "calibration.json"
 if CALIB_PATH.exists():
     with open(CALIB_PATH) as f:
         calibration = json.load(f)
-    trigger_params = calibration["trigger_parameters"]
+    trigger_params = calibration.get("trigger_parameters", {})
 else:
     trigger_params = {
         "decay_rate": 0.6,
         "sensitivity": 1.8,
         "alpha_scale": 1.5,
-        "joy_threshold": 0.2,
-        "grief_threshold": -0.2,
     }
 
 # ------------------------------------------------------------------
@@ -61,61 +70,101 @@ else:
 # ------------------------------------------------------------------
 model = None
 tokenizer = None
-joy_direction = None
-grief_direction = None
+valence_axis = None
+arousal_axis = None
+model_info = {
+    "name": MODEL_NAME,
+    "device": DEVICE,
+    "layer": TARGET_LAYER,
+    "n_layers": 0,
+    "hidden_size": 0,
+}
 
 # Session storage (in-memory for demo)
-# In production, use Redis or a database
 sessions: Dict[str, Dict] = {}
+
+# ------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------
+def _find_directions_dir() -> Path:
+    """Pick directions directory based on model name."""
+    if "7B" in MODEL_NAME:
+        d = PROJECT_ROOT / "outputs" / "directions_7b"
+    elif "1.5B" in MODEL_NAME:
+        d = PROJECT_ROOT / "outputs" / "directions"
+    else:
+        d = PROJECT_ROOT / "outputs" / "directions"
+    return d
+
 
 # ------------------------------------------------------------------
 # Lifespan context manager (startup/shutdown)
 # ------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    global model, tokenizer, joy_direction, grief_direction
-    
+    global model, tokenizer, valence_axis, arousal_axis, model_info, TARGET_LAYER
+
     print("=" * 60)
-    print("ARVAS Live Demo — Loading Model...")
+    print("ARVAS Live Demo v2 — Multi-Emotion Spectrum")
     print("=" * 60)
-    
+
     # Load model
     print(f"Loading {MODEL_NAME} on {DEVICE} with {DTYPE}...")
     model, tokenizer = load_model_and_tokenizer(MODEL_NAME, device=DEVICE, torch_dtype=DTYPE)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     model.eval()
-    print(f"  Model loaded: {len(model.model.layers)} layers, {model.config.hidden_size} hidden dim")
-    
-    # Load direction vectors (normalized)
-    norm_dir = PROJECT_ROOT / "outputs" / "directions"
-    joy_path = norm_dir / "joy_direction_norm.pt"
-    grief_path = norm_dir / "grief_direction_norm.pt"
-    
-    if not joy_path.exists():
-        print("  Warning: Normalized direction vectors not found.")
-        print("  Run experiments 1-3 first to generate them.")
-        joy_direction = None
-        grief_direction = None
-    else:
-        joy_direction = torch.load(joy_path, weights_only=True).to(DEVICE)
-        grief_direction = torch.load(grief_path, weights_only=True).to(DEVICE)
-        print(f"  Directions loaded: joy norm={joy_direction.norm():.4f}, grief norm={grief_direction.norm():.4f}")
-    
+
+    n_layers = len(get_layer_names(model))
+    hidden_size = model.config.hidden_size
+    model_info["n_layers"] = n_layers
+    model_info["hidden_size"] = hidden_size
+    print(f"  Model loaded: {n_layers} layers, {hidden_size} hidden dim")
+
+    # Auto-detect target layer if not set
+    if not TARGET_LAYER:
+        target_idx = n_layers // 2
+        TARGET_LAYER = f"model.layers.{target_idx}"
+        model_info["layer"] = TARGET_LAYER
+        print(f"  Auto-selected middle layer: {TARGET_LAYER}")
+
+    # Determine directions directory
+    directions_dir = _find_directions_dir()
+    print(f"  Looking for directions in: {directions_dir}")
+
+    # Load valence/arousal axes for 2D steering
+    axes_path = directions_dir / f"valence_arousal_axes_{TARGET_LAYER.replace('.', '_')}.pt"
+    if not axes_path.exists():
+        alt = list(directions_dir.glob("valence_arousal_axes_*.pt"))
+        if alt:
+            axes_path = alt[0]
+            print(f"  Warning: Target layer axes not found. Falling back to {axes_path.name}")
+        else:
+            print("  Warning: No valence/arousal axes found. 2D steering disabled.")
+            print(f"    Run: python src/emotion_extraction.py --model {MODEL_NAME} --output {directions_dir}")
+            valence_axis = None
+            arousal_axis = None
+
+    if axes_path.exists():
+        axes = torch.load(axes_path, weights_only=True).to(DEVICE)
+        valence_axis = axes[0]
+        arousal_axis = axes[1]
+        print(f"  Loaded 2D axes from {axes_path.name}")
+        print(f"    Valence axis norm: {valence_axis.norm():.4f}")
+        print(f"    Arousal axis norm: {arousal_axis.norm():.4f}")
+
     print("=" * 60)
     print("Ready! Open http://localhost:8000 in your browser.")
     print("=" * 60)
-    
-    yield  # Server runs here
-    
-    # Shutdown (cleanup if needed)
+
+    yield
+
     print("Shutting down...")
 
 # ------------------------------------------------------------------
 # FastAPI app
 # ------------------------------------------------------------------
-app = FastAPI(title="ARVAS Live Demo", version="1.0", lifespan=lifespan)
+app = FastAPI(title="ARVAS Live Demo v2", version="2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -134,30 +183,36 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
-    emotion_level: float
-    direction: str
+    valence: float
+    arousal: float
     alpha: float
     sentiment: float
+    arousal_score: float
     turn: int
 
 class ResetRequest(BaseModel):
     session_id: str
 
 # ------------------------------------------------------------------
-# Helper: Generate with steering
+# Helper: Generate with 2D steering
 # ------------------------------------------------------------------
-def generate_response(history: List[Dict[str, str]], direction_vec: Optional[torch.Tensor], alpha: float) -> str:
-    """Generate a response from the model with optional steering."""
-    # Build chat prompt
+def generate_response(
+    history: List[Dict[str, str]],
+    valence: float,
+    arousal: float,
+    alpha: float,
+) -> str:
+    """Generate a response from the model with optional 2D steering."""
     prompt = tokenizer.apply_chat_template(history, tokenize=False, add_generation_prompt=True)
-    
-    if direction_vec is not None and alpha > 0:
+
+    if valence_axis is not None and arousal_axis is not None and alpha > 0:
+        direction = compute_2d_direction(valence_axis, arousal_axis, valence, arousal)
         return generate_with_steering(
             model=model,
             tokenizer=tokenizer,
             prompt=prompt,
             layer_names=[TARGET_LAYER],
-            direction=direction_vec,
+            direction=direction,
             alpha=alpha,
             max_new_tokens=MAX_NEW_TOKENS,
             device=DEVICE,
@@ -179,55 +234,43 @@ def generate_response(history: List[Dict[str, str]], direction_vec: Optional[tor
 # ------------------------------------------------------------------
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Process a chat message and return the model's response with emotional state."""
+    """Process a chat message and return the model's response with 2D emotional state."""
     session_id = request.session_id
     user_message = request.message.strip()
-    
+
     if not user_message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
-    
-    # Get or create session
+
     if session_id not in sessions:
         sessions[session_id] = {
             "history": [],
-            "trigger": SentimentTrigger(**trigger_params),
+            "trigger": AffectiveTrigger(**trigger_params),
             "turn": 0,
         }
-    
+
     session = sessions[session_id]
     trigger = session["trigger"]
     session["turn"] += 1
     turn = session["turn"]
-    
-    # Update trigger with user message
-    direction_name, alpha = trigger.update(user_message)
-    state = trigger.get_state()
-    emotion_level = state["emotion_level"]
-    
-    # Get sentiment score
-    sentiment = trigger.score_message(user_message)
-    
-    # Select direction vector
-    direction_vec = None
-    if direction_name == "joy" and joy_direction is not None:
-        direction_vec = joy_direction
-    elif direction_name == "grief" and grief_direction is not None:
-        direction_vec = grief_direction
-    
-    # Generate response
+
+    valence_level, arousal_level, alpha = trigger.update(user_message)
+
+    sentiment = trigger.score_valence(user_message)
+    arousal_score = trigger.score_arousal(user_message)
+
     history = session["history"] + [{"role": "user", "content": user_message}]
-    response = generate_response(history, direction_vec, alpha)
-    
-    # Update session history
+    response = generate_response(history, valence_level, arousal_level, alpha)
+
     session["history"].append({"role": "user", "content": user_message})
     session["history"].append({"role": "assistant", "content": response})
-    
+
     return ChatResponse(
         response=response,
-        emotion_level=emotion_level,
-        direction=direction_name,
+        valence=valence_level,
+        arousal=arousal_level,
         alpha=alpha,
         sentiment=sentiment,
+        arousal_score=arousal_score,
         turn=turn,
     )
 
@@ -244,9 +287,12 @@ async def status():
     """Check if the model is loaded and ready."""
     return {
         "model_loaded": model is not None,
-        "model_name": MODEL_NAME,
-        "device": DEVICE,
-        "directions_loaded": joy_direction is not None,
+        "model_name": model_info["name"],
+        "device": model_info["device"],
+        "axes_loaded": valence_axis is not None,
+        "target_layer": model_info["layer"],
+        "n_layers": model_info["n_layers"],
+        "hidden_size": model_info["hidden_size"],
     }
 
 # ------------------------------------------------------------------

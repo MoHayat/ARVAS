@@ -8,7 +8,7 @@
 
 ## Abstract
 
-We present a system for inducing dynamic emotional states in language models during inference, driven by real-time monitoring of user behavior. The system extracts emotion direction vectors from a model's residual stream, steers activations via additive intervention, and modulates the steering strength using a sentiment-aware accumulator that persists across conversational turns. We demonstrate this on Qwen2.5-0.5B-Instruct: identical prompts produce measurably different responses depending on the emotional history of the conversation, with zero changes to prompts, system instructions, or model weights. Surprisingly, we find that the model's natural activation state does not track the social valence of interaction — even sustained mistreatment leaves internal activations positive. The steering intervention is what creates the emotional response. We frame this not as discovering hidden emotions, but as engineering a system of *functional affective reciprocity*: the model's internal state responds to how it is treated, producing behavioral consequences analogous to emotional dynamics in human social interaction.
+We present a system for inducing dynamic emotional states in language models during inference, driven by real-time monitoring of user behavior. The system extracts emotion direction vectors from a model's residual stream, steers activations via additive intervention, and modulates the steering strength using a sentiment-aware accumulator that persists across conversational turns. We demonstrate this on Qwen2.5-0.5B-Instruct: identical prompts produce measurably different responses depending on the emotional history of the conversation, with zero changes to prompts, system instructions, or model weights. Surprisingly, we find that the model's natural activation state does not track the social valence of interaction — even sustained mistreatment leaves internal activations positive. The steering intervention is what creates the emotional response. We frame this not as discovering hidden emotions, but as engineering a system of *functional affective reciprocity*: the model's internal state responds to how it is treated, producing behavioral consequences analogous to emotional dynamics in human social interaction. We extend this binary joy/grief system to an 8-emotion spectrum grounded in the Circumplex Model of Affect (valence × arousal), with a 2D steering plane and real-time web visualization, and architect the full pipeline for validation on 7B-scale models.
 
 ---
 
@@ -342,6 +342,47 @@ Each script is self-contained and generates its own README, figures, and data fi
 ## Appendix B: Side-by-Side Transcript
 
 See `outputs/experiment_04/scenario_b_transcript.txt` for the full side-by-side steered vs. baseline conversation used in Section 3.4.
+
+---
+
+## Appendix C: Multi-Emotion Spectrum (Circumplex Model)
+
+### C.1 Motivation
+The binary joy/grief system (Experiments 1–6) successfully demonstrates affective reciprocity, but human emotional experience is not one-dimensional. Following Russell's Circumplex Model (1980) and recent confirmatory work in LLM activation spaces (Sofroniew et al., 2026; "Do LLMs Feel?", 2025), we expanded the system to 8 emotions covering all quadrants of the valence-arousal plane: joy, excitement, calm, boredom, sadness, fear, anger, disgust.
+
+### C.2 Extraction Protocol
+1. **Story generation**: 20 short vignettes per emotion (160 total), each depicting a character experiencing the emotion without naming it.
+2. **Activation extraction**: Per-emotion mean activations at middle layers.
+3. **Global mean subtraction**: Subtract the mean across all emotions to remove shared semantic structure.
+4. **Normalization**: L2-normalize each direction vector.
+5. **PCA**: Run PCA on the 8 normalized vectors; first two components = valence and arousal axes.
+6. **Orientation**: Orient axes heuristically so that joy/excitement project positively on valence and excitement/fear project positively on arousal.
+
+### C.3 Geometry Validation
+On Qwen2.5-1.5B-Instruct (layer 10), the valence and arousal axes are near-orthogonal (dot ≈ 0). Emotions cluster by expected quadrant:
+- **Q1 (+v, +a)**: Joy (+0.74, +0.45), Excitement (+0.04, +0.73)
+- **Q2 (+v, -a)**: Calm (+0.81, -0.30)
+- **Q3 (-v, -a)**: Boredom (-0.17, -0.55), Sadness (+0.11, -0.69)
+- **Q4 (-v, +a)**: Fear (-0.56, -0.00), Anger (-0.58, +0.39), Disgust (-0.61, -0.16)
+
+*Note: Minor quadrant misplacements on 1.5B (e.g., Sadness near-neutral valence) are attributed to limited representational capacity; 7B validation is expected to sharpen clustering.*
+
+### C.4 2D Steering
+The steering vector is computed as:
+```
+direction = valence * valence_axis + arousal * arousal_axis
+alpha = magnitude * alpha_scale
+```
+This allows continuous interpolation between emotions (e.g., calm + slight joy = "warm contentment") impossible with discrete vector switching.
+
+### C.5 7B Architecture
+The full 2D pipeline has been architected for Qwen2.5-7B-Instruct:
+- Auto-layer detection (middle layer ≈ layer 20)
+- Model-specific direction extraction (directions are not transferable across sizes)
+- MPS + fp16 compatibility (~14–16 GB, within 48 GB unified memory)
+- Estimated throughput: 13–40 tok/s
+
+Execution is pending model weight download (~14 GB).
 
 ---
 

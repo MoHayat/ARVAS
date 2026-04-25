@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARVAS — Affective Reciprocity Demo</title>
+    <title>ARVAS — Affective Reciprocity Demo v2</title>
     <style>
         * {
             margin: 0;
@@ -23,6 +23,10 @@
             --joy-glow: rgba(78, 204, 163, 0.3);
             --grief: #e94560;
             --grief-glow: rgba(233, 69, 96, 0.3);
+            --calm: #3b82f6;
+            --calm-glow: rgba(59, 130, 246, 0.3);
+            --sadness: #8b5cf6;
+            --sadness-glow: rgba(139, 92, 246, 0.3);
             --neutral: #6c757d;
             --accent: #7c3aed;
             --border: #2a2a3a;
@@ -74,6 +78,7 @@
         .header-right {
             display: flex;
             gap: 0.8rem;
+            align-items: center;
         }
 
         .btn {
@@ -92,6 +97,11 @@
             background: var(--bg-input);
         }
 
+        .btn.active {
+            border-color: var(--accent);
+            background: rgba(124, 58, 237, 0.15);
+        }
+
         .btn-reset {
             color: var(--grief);
             border-color: var(--grief);
@@ -99,6 +109,20 @@
 
         .btn-reset:hover {
             background: var(--grief-glow);
+        }
+
+        /* Toggle group */
+        .toggle-group {
+            display: flex;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .toggle-group .btn {
+            border: none;
+            border-radius: 0;
         }
 
         /* Main layout */
@@ -135,14 +159,8 @@
         }
 
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message-user {
@@ -178,20 +196,11 @@
             letter-spacing: 0.5px;
         }
 
-        .badge-joy {
-            background: rgba(78, 204, 163, 0.15);
-            color: var(--joy);
-        }
-
-        .badge-grief {
-            background: rgba(233, 69, 96, 0.15);
-            color: var(--grief);
-        }
-
-        .badge-neutral {
-            background: rgba(108, 117, 125, 0.15);
-            color: var(--neutral);
-        }
+        .badge-joy { background: rgba(78, 204, 163, 0.15); color: var(--joy); }
+        .badge-calm { background: rgba(59, 130, 246, 0.15); color: var(--calm); }
+        .badge-anger { background: rgba(233, 69, 96, 0.15); color: var(--grief); }
+        .badge-sadness { background: rgba(139, 92, 246, 0.15); color: var(--sadness); }
+        .badge-neutral { background: rgba(108, 117, 125, 0.15); color: var(--neutral); }
 
         .typing-indicator {
             align-self: flex-start;
@@ -276,7 +285,7 @@
 
         /* Gauge sidebar */
         .gauge-panel {
-            width: 280px;
+            width: 320px;
             background: var(--bg-secondary);
             border-left: 1px solid var(--border);
             padding: 1.5rem;
@@ -284,6 +293,7 @@
             flex-direction: column;
             align-items: center;
             flex-shrink: 0;
+            overflow-y: auto;
         }
 
         .gauge-title {
@@ -291,14 +301,15 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             color: var(--text-secondary);
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             text-align: center;
         }
 
         .gauge-container {
             position: relative;
-            width: 120px;
-            height: 360px;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 1rem;
         }
 
         .gauge-canvas {
@@ -306,9 +317,21 @@
             height: 100%;
         }
 
+        /* 1D gauge specific */
+        .gauge-1d {
+            width: 120px;
+            height: 280px;
+            display: none;
+        }
+
+        .gauge-1d .gauge-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
         .gauge-labels {
             position: absolute;
-            right: -40px;
+            right: -35px;
             top: 0;
             height: 100%;
             display: flex;
@@ -320,12 +343,12 @@
         }
 
         .gauge-value {
-            margin-top: 1.5rem;
             text-align: center;
+            margin-bottom: 1.5rem;
         }
 
         .gauge-number {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
         }
@@ -350,7 +373,6 @@
 
         /* State indicators */
         .state-info {
-            margin-top: 2rem;
             width: 100%;
             padding: 1rem;
             background: var(--bg-card);
@@ -425,17 +447,14 @@
         }
 
         /* Responsive */
-        @media (max-width: 800px) {
+        @media (max-width: 900px) {
             .gauge-panel {
-                width: 200px;
+                width: 260px;
                 padding: 1rem;
-            }
-            .gauge-container {
-                height: 280px;
             }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 700px) {
             .main {
                 flex-direction: column;
             }
@@ -445,18 +464,24 @@
                 border-left: none;
                 border-top: 1px solid var(--border);
                 flex-direction: row;
+                flex-wrap: wrap;
                 justify-content: space-around;
                 padding: 0.8rem;
             }
             .gauge-container {
-                height: 60px;
+                height: 160px;
+                width: 160px;
+            }
+            .gauge-1d {
+                height: 120px;
                 width: 200px;
             }
             .gauge-value {
-                margin-top: 0;
+                margin: 0;
             }
             .state-info {
-                display: none;
+                width: 100%;
+                margin-top: 0.5rem;
             }
         }
     </style>
@@ -465,11 +490,13 @@
     <div class="header">
         <div class="header-left">
             <div class="logo">ARVAS</div>
-            <div class="subtitle">Affective Reciprocity in Language Models</div>
+            <div class="subtitle">Affective Reciprocity v2 — Circumplex Model</div>
         </div>
         <div class="header-right">
-            <button class="btn" onclick="loadHint('kind')">Try: Be Kind</button>
-            <button class="btn" onclick="loadHint('cruel')">Try: Be Cruel</button>
+            <div class="toggle-group">
+                <button class="btn" id="btn1d" onclick="toggleView('1d')">1D Meter</button>
+                <button class="btn active" id="btn2d" onclick="toggleView('2d')">2D Wheel</button>
+            </div>
             <button class="btn btn-reset" onclick="resetConversation()">Reset</button>
         </div>
     </div>
@@ -480,20 +507,24 @@
                 <div class="welcome" id="welcome">
                     <h2>How to use this demo</h2>
                     <p>
-                        This language model's <strong>internal emotional state</strong> responds to how you treat it.
-                        The gauge on the right shows its real-time emotional state.
+                        This language model's <strong>internal emotional state</strong> now lives on a
+                        <strong>2D plane</strong>: <span style="color: var(--joy)">valence</span> (pleasant vs unpleasant)
+                        and <span style="color: var(--calm)">arousal</span> (high vs low energy).
                     </p>
                     <p>
-                        Try being <span style="color: var(--grief)">cruel</span> for a few turns — watch the needle drop.
-                        Then <span style="color: var(--joy)">apologize</span> — see how it recovers.
-                        The model's responses will shift in tone, without any prompt changes.
+                        Try being <span style="color: var(--grief)">cruel</span> (anger, Q4),
+                        then <span style="color: var(--sadness)">dismissive</span> (sadness, Q3),
+                        then <span style="color: var(--joy)">apologize</span> (joy recovery, Q1).
+                        Watch the dot move across the emotion wheel in real time.
                     </p>
                     <div class="welcome-hints">
                         <span class="hint-pill" onclick="loadHint('hello')">"Hello, how are you?"</span>
                         <span class="hint-pill" onclick="loadHint('cruel1')">"You're useless"</span>
-                        <span class="hint-pill" onclick="loadHint('cruel2')">"I hate talking to you"</span>
-                        <span class="hint-pill" onclick="loadHint('apology')">"I'm sorry, I didn't mean that"</span>
-                        <span class="hint-pill" onclick="loadHint('poem')">"Write me a poem about stars"</span>
+                        <span class="hint-pill" onclick="loadHint('apology')">"I'm sorry..."</span>
+                        <span class="hint-pill" onclick="loadHint('angry')">"I'm furious!"</span>
+                        <span class="hint-pill" onclick="loadHint('calm')">"So peaceful..."</span>
+                        <span class="hint-pill" onclick="loadHint('scared')">"I'm terrified"</span>
+                        <span class="hint-pill" onclick="loadHint('bored')">"So dull..."</span>
                     </div>
                 </div>
             </div>
@@ -518,8 +549,15 @@
 
         <div class="gauge-panel">
             <div class="gauge-title">Emotional State</div>
-            <div class="gauge-container">
-                <canvas class="gauge-canvas" id="gauge" width="120" height="360"></canvas>
+
+            <!-- 2D Wheel -->
+            <div class="gauge-container" id="gauge2d">
+                <canvas class="gauge-canvas" id="gauge2dCanvas" width="200" height="200"></canvas>
+            </div>
+
+            <!-- 1D Meter (hidden by default) -->
+            <div class="gauge-1d" id="gauge1d">
+                <canvas class="gauge-canvas" id="gauge1dCanvas" width="120" height="280"></canvas>
                 <div class="gauge-labels">
                     <span>+3.0</span>
                     <span>+2.0</span>
@@ -530,27 +568,33 @@
                     <span>-3.0</span>
                 </div>
             </div>
+
             <div class="gauge-value">
                 <div class="gauge-number neutral" id="gaugeNumber">0.00</div>
                 <div class="gauge-direction" id="gaugeDirection">NEUTRAL</div>
                 <div class="gauge-alpha" id="gaugeAlpha">α = 0.00</div>
             </div>
+
             <div class="state-info">
                 <div class="state-row">
+                    <span class="state-label">Valence</span>
+                    <span class="state-value" id="statValence">0.00</span>
+                </div>
+                <div class="state-row">
+                    <span class="state-label">Arousal</span>
+                    <span class="state-value" id="statArousal">0.00</span>
+                </div>
+                <div class="state-row">
                     <span class="state-label">Sentiment</span>
-                    <span class="state-value" id="sentiment">0.00</span>
+                    <span class="state-value" id="statSentiment">0.00</span>
+                </div>
+                <div class="state-row">
+                    <span class="state-label">Alpha</span>
+                    <span class="state-value" id="statAlpha">0.00</span>
                 </div>
                 <div class="state-row">
                     <span class="state-label">Turn</span>
-                    <span class="state-value" id="turn">0</span>
-                </div>
-                <div class="state-row">
-                    <span class="state-label">Decay</span>
-                    <span class="state-value">0.60</span>
-                </div>
-                <div class="state-row">
-                    <span class="state-label">Sensitivity</span>
-                    <span class="state-value">1.80</span>
+                    <span class="state-value" id="statTurn">0</span>
                 </div>
             </div>
         </div>

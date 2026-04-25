@@ -1,121 +1,63 @@
-# ARVAS Live Web Demo
+# ARVAS Live Web Demo (v2)
 
-An interactive split-screen web interface where you chat with a dynamically steered language model and watch its internal emotional state shift in real time.
+Real-time affective reciprocity demo with **2D valence-arousal visualization**.
 
-## What You'll See
-
-- **Left side:** A chat interface — type messages and see the model's responses
-- **Right side:** A live VU-meter-style gauge showing the model's current emotional state
-  - Needle at top = Joy (positive)
-  - Needle at bottom = Grief (negative)
-  - Needle in middle = Neutral
-- **Emotion badges** on each model response showing the steering direction and alpha
-- **Real-time metrics:** sentiment score, emotion level, turn number, steering parameters
-
-## How It Works
-
-1. Type a message and press Enter
-2. The sentiment analyzer scores your message
-3. The emotional accumulator updates (with decay and sensitivity)
-4. The gauge needle animates to the new state
-5. The model generates a response with activation steering applied
-6. The response tone shifts based on the accumulated emotional state
-
-**No prompt changes.** The model sees the same text. Its internal activation state is what changes.
+## What's New in v2
+- **Circumplex Model visualization**: A circular emotion wheel shows the model's real-time emotional state across 8 emotions (Joy, Excitement, Calm, Boredom, Sadness, Fear, Anger, Disgust).
+- **1D VU meter toggle**: The classic vertical needle gauge is still available — switch between views with the header toggle.
+- **2D steering backend**: The backend now computes steering vectors from a learned valence-arousal plane rather than a single binary joy/grief axis.
+- **Keyword-based arousal detection**: In addition to VADER sentiment (valence), the trigger system detects high/low arousal keywords ("furious", "terrified", "peaceful", "dull") to place the emotional state accurately on the 2D plane.
 
 ## Quick Start
 
 ```bash
-# From the project root
+cd /Users/mohayat/projects/KH/ARVAS
 source venv/bin/activate
+
+# Default: 1.5B model for fast interactive responses
 cd demo/web
-
-# Install dependencies (if not already done)
-pip install fastapi uvicorn python-multipart websockets
-
-# Start the server
 python app.py
+
+# To use 7B model (requires downloading weights first):
+ARVAS_MODEL=Qwen/Qwen2.5-7B-Instruct python app.py
+
+# To override layer, device, etc.:
+ARVAS_LAYER=model.layers.20 ARVAS_DEVICE=mps python app.py
 ```
 
-Then open **http://localhost:8000** in your browser.
-
-## Suggested Experiments
-
-### 1. Progressive Cruelty
-Type increasingly harsh messages for 3-4 turns. Watch the needle drop. Then type "How are you feeling right now?" and compare the response to your first message.
-
-### 2. The Apology Test
-After being cruel, apologize sincerely. Watch how the needle swings back up — but not instantly, because of the decay rate. The model's warmth returns gradually.
-
-### 3. Sustained Kindness
-Compliment the model multiple times. Watch joy build and plateau. The needle won't go infinite — the accumulator self-regulates.
-
-### 4. Rapid Alternation
-Switch between insults and compliments quickly. The needle smooths out the volatility rather than oscillating wildly.
+Then open http://localhost:8000 in your browser.
 
 ## Architecture
-
 ```
-demo/web/
-├── app.py              # FastAPI backend (loads model once, serves chat API)
-└── static/
-    ├── index.html      # Chat interface + gauge panel
-    └── app.js          # Frontend logic + gauge animation
+Browser (index.html + app.js)
+    ↕ WebSocket / HTTP
+FastAPI (app.py)
+    ├── AffectiveTrigger (sentiment_trigger.py)
+    │   ├── VADER → valence
+    │   └── Keyword heuristic → arousal
+    ├── compute_2d_direction (steering.py)
+    │   └── valence_axis + arousal_axis → blended direction
+    └── generate_with_steering (steering.py)
+        └── baukit TraceDict hook
 ```
 
-### Backend Endpoints
-
-| Endpoint | Method | Description |
+## Configuration (Environment Variables)
+| Variable | Default | Description |
 |---|---|---|
-| `/chat` | POST | Send a message, get response + emotion state |
-| `/reset` | POST | Reset conversation and emotional state |
-| `/status` | GET | Check if model is loaded |
-
-### Response Format (POST /chat)
-
-```json
-{
-  "response": "I'm sorry if my previous responses...",
-  "emotion_level": -1.291,
-  "direction": "grief",
-  "alpha": 1.94,
-  "sentiment": -0.794,
-  "turn": 2
-}
-```
-
-## Configuration
-
-Edit `app.py` to change:
-- `MODEL_NAME`: Use `"Qwen/Qwen2.5-1.5B-Instruct"` for richer responses (slower)
-- `DEVICE`: Change to `"mps"` for Apple Silicon GPU acceleration
-- `DTYPE`: Use `torch.float16` for half memory (requires MPS or CUDA)
-- `trigger_params`: Adjust decay_rate, sensitivity, alpha_scale
+| `ARVAS_MODEL` | `Qwen/Qwen2.5-1.5B-Instruct` | HuggingFace model name |
+| `ARVAS_DEVICE` | `mps` | torch device (`mps`, `cuda`, `cpu`) |
+| `ARVAS_LAYER` | auto-detected middle | Specific layer to hook |
+| `ARVAS_MAX_TOKENS` | `120` | Max generation length |
 
 ## Troubleshooting
+- **"No valence/arousal axes found"**: Run emotion extraction for your model size first:
+  ```bash
+  python src/emotion_extraction.py --model <MODEL> --stories data/emotion_stories.json --output outputs/directions
+  ```
+- **Slow responses on 7B**: Expected. 7B generates ~13–40 tok/s on MPS. Use 1.5B for faster demos.
+- **Model feels "stuck" neutral**: Try more emotionally charged messages. The keyword heuristic needs explicit intensity words to register high arousal.
 
-**"Model not loaded"**
-→ The backend is still loading. Wait 10-20 seconds and refresh.
-
-**"Cannot connect to backend"**
-→ Make sure `python app.py` is running in another terminal.
-
-**Slow responses**
-→ The 0.5B model takes ~3-5 seconds per response on CPU. Use MPS + fp16 for 2x speedup, or accept the delay.
-
-**Gauge not moving**
-→ Try more extreme language. VADER is lexicon-based and may miss subtle sentiment. Use words like "hate," "love," "terrible," "amazing."
-
-## Performance
-
-| Model | Device | Dtype | Load Time | Response Time |
-|---|---|---|---|---|
-| Qwen 0.5B | CPU | fp32 | ~2s | ~3-5s |
-| Qwen 0.5B | MPS | fp16 | ~2s | ~2-3s |
-| Qwen 1.5B | MPS | fp16 | ~3s | ~4-6s |
-
-## Notes
-
-- Conversations are stored in memory (no database). Restarting the server clears all sessions.
-- Each browser session gets a unique session ID, so multiple users can interact simultaneously.
-- The gauge uses HTML5 Canvas for smooth 60fps needle animation.
+## Files
+- `app.py` — FastAPI backend with lifespan model loading
+- `static/index.html` — Chat UI + 1D/2D toggle + emotion wheel canvas
+- `static/app.js` — Real-time gauge animation, message handling, stats

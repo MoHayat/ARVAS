@@ -132,6 +132,22 @@ We'd also love to see a formal human evaluation study: have people read steered 
 
 ---
 
+## Update: Beyond Binary — The Emotion Wheel
+
+Since the original experiments, we've expanded the system from a single joy/grief axis to a full **2D emotion wheel** grounded in psychology's Circumplex Model.
+
+Instead of just "happy vs sad," the model now tracks **8 emotions** across two dimensions:
+- **Valence** (pleasant → unpleasant)
+- **Arousal** (high energy → low energy)
+
+The web demo shows a live circular gauge. When you type "I'm absolutely furious!" the dot jumps to the **Anger** quadrant (top-left: negative valence, high arousal). When you type "I feel so peaceful," it glides to **Calm** (bottom-right: positive valence, low arousal). The same question gets a different answer depending on which quadrant the model is in.
+
+We extracted these 8 directions by having the model read 160 short stories — 20 per emotion — where characters experience joy, excitement, calm, boredom, sadness, fear, anger, or disgust without ever naming the feeling. We averaged the activations, removed shared semantics, and ran PCA to find the valence and arousal axes hiding inside the model's geometry.
+
+The entire pipeline is now architected for **7B-scale models** (Qwen2.5-7B-Instruct), where we expect the emotional shifts to be genuinely naturalistic rather than fighting through template entrenchment. All that's left is downloading the weights.
+
+---
+
 ## The Bottom Line
 
 Language models don't naturally track the emotional consequences of how they're treated. Their internal states reflect task goals — be helpful, be accurate — not social valence. But we can engineer systems that make them responsive to social interaction in ways that mirror human emotional dynamics.

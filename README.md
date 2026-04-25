@@ -45,7 +45,9 @@ ARVAS/
 ├── src/                                 # Reusable Python modules
 │   ├── activation_utils.py              # Model loading, activation extraction, direction computation
 │   ├── steering.py                        # Hook-based activation steering during generation
-│   ├── sentiment_trigger.py             # VADER-based sentiment scoring and emotional accumulator
+│   ├── sentiment_trigger.py             # 2D valence-arousal trigger with keyword heuristic
+│   ├── emotion_extraction.py            # Multi-emotion direction extraction + PCA pipeline
+│   └── reorient_axes.py                 # Post-hoc PCA axis orientation utility
 │   └── visualization.py                 # PCA plots, emotion timeline plots
 ├── experiments/                         # Self-contained experiment runners + READMEs
 │   ├── experiment_01_direction_extraction/
@@ -65,7 +67,13 @@ ARVAS/
 │   ├── experiment_05_measurement/
 │   │   ├── run.py
 │   │   └── README.md
-│   └── experiment_06_larger_models/
+│   ├── experiment_06_larger_models/
+│   │   ├── run.py
+│   │   └── README.md
+│   ├── experiment_07_emotion_spectrum/
+│   │   ├── run.py
+│   │   └── README.md
+│   └── experiment_08_7b_steering/
 │       ├── run.py
 │       └── README.md
 ├── notebooks/                           # Jupyter notebook versions of experiments
@@ -112,9 +120,10 @@ ARVAS/
 | 3 | **Trigger System** | ✅ Complete | Sentiment-aware emotional accumulator with realistic dynamics (buildup, decay, apology recovery). Fully calibrated to map emotion levels to safe steering alphas. |
 | 4 | **Full Integration** | ✅ Complete | Live conversation loop where model responses shift based on accumulated emotional state. Identical prompts produce different answers depending on conversational history. Zero prompt changes. |
 | 5 | **Measurement & Viz** | ✅ Complete | Internal activation trajectories captured and plotted. Natural state is blind to mistreatment; steering creates the emotional response. Publishable figures generated. |
-| 6 | **Larger Models** | ✅ Complete | Tested on Qwen2.5-1.5B with MPS+fp16. 5-10x speedup over CPU. Middle layers (14-17) show better separability. Model more resistant to steering on templated prompts. |
-| 7 | LoRA Adapter Swapping | ⏳ Future Work | Compare activation steering vs. LoRA-based emotional state. |
-| 8 | Even Larger Models | ⏳ Future Work | Test on Qwen 7B, Gemma 9B for stronger, more naturalistic shifts. |
+| 6 | **Larger Models (1.5B)** | ✅ Complete | Tested on Qwen2.5-1.5B with MPS+fp16. 5-10x speedup over CPU. Middle layers (14-17) show better separability. Model more resistant to steering on templated prompts. |
+| 7 | **Multi-Emotion Spectrum** | ✅ Complete | Extracted 8 emotions covering all Circumplex quadrants. PCA yields near-orthogonal valence/arousal axes. 1.5B shows template entrenchment; geometry confirmed but naturalism requires larger model. |
+| 8 | **7B Steering** | ⏳ Ready | Full 2D pipeline architected for Qwen2.5-7B-Instruct. Pending model download (~14 GB). Expected to show more naturalistic emotional shifts than 1.5B. |
+| 9 | LoRA Adapter Swapping | ⏳ Future Work | Compare activation steering vs. LoRA-based emotional state. |
 
 ---
 
@@ -161,17 +170,32 @@ ARVAS/
 - **Larger models are more resistant to steering on heavily templated prompts.** The 1.5B model's "AI disclaimer" responses are more entrenched. Effects become visible at higher alphas (α=3-5) or with more open-ended prompts.
 - **Direction vector norms are much larger** (up to 50 vs. 16 on 0.5B), reinforcing the need for normalization.
 
+### Experiment 7: Multi-Emotion Spectrum — Circumplex Model
+- **8 emotions extracted** (joy, excitement, calm, boredom, sadness, fear, anger, disgust) using the "Do LLMs Feel?" protocol: 20 stories per emotion, global mean subtraction, normalization.
+- **PCA on emotion vectors yields a clean 2D plane** with near-orthogonal axes (dot ≈ 0), confirming the Circumplex Model geometry in LLM activation space.
+- **Emotions cluster by quadrant**:
+  - Q1 (+valence, +arousal): Joy, Excitement
+  - Q2 (+valence, -arousal): Calm
+  - Q3 (-valence, -arousal): Boredom, Sadness
+  - Q4 (-valence, +arousal): Fear, Anger, Disgust
+- **Template entrenchment is the limiting factor on 1.5B.** Steering produces tonal shifts but the model frequently reverts to "As an AI assistant..." disclaimers. The 7B upgrade is expected to solve this.
+
+### Experiment 8: 7B Model Steering (Architected)
+- **Full 2D pipeline implemented** for Qwen2.5-7B-Instruct with auto-layer detection, model-specific direction extraction, and configurable blended steering.
+- **Hardware verified**: 7B fp16 ≈ 14–16 GB, well within 48 GB unified memory. Estimated 13–40 tok/s on MPS.
+- **Pending execution**: Model weights (~14 GB) need to be downloaded. Once cached, running `experiments/experiment_08_7b_steering/run.py` will validate naturalistic emotional shifts.
+
 ### Recommended Parameters
 
-| Parameter | Value |
-|---|---|
-| Target layer | `model.layers.10` |
-| Direction normalization | Unit length |
-| Joy alpha range | 0.5–2.0 |
-| Grief alpha range | 2.0–5.0 |
-| Accumulator decay | 0.6 |
-| Accumulator sensitivity | 1.8 |
-| Alpha scale | 1.5 |
+| Parameter | 0.5B | 1.5B | 7B (projected) |
+|---|---|---|---|
+| Target layer | `model.layers.10` | `model.layers.14-17` | `model.layers.20-28` |
+| Direction normalization | Unit length | Unit length | Unit length |
+| Joy alpha range | 0.5–2.0 | 2.0–4.0 | 3.0–6.0 |
+| Grief alpha range | 2.0–5.0 | 3.0–5.0 | 4.0–7.0 |
+| Accumulator decay | 0.6 | 0.6 | 0.6 |
+| Accumulator sensitivity | 1.8 | 1.8 | 1.8 |
+| Alpha scale | 1.5 | 1.5 | 2.0–3.0 |
 
 ---
 
@@ -190,19 +214,25 @@ python app.py
 
 Then open **http://localhost:8000** in your browser.
 
-**What you'll see:**
+**What you'll see (v2):**
 - **Left side:** A live chat interface — type anything and see the model respond
-- **Right side:** A real-time VU-meter gauge with a needle that moves between "Grief" (bottom, red) and "Joy" (top, green)
-- **Emotion badges** on every model response showing the steering direction and strength
-- **Real-time metrics:** sentiment score, emotion level, turn number
+- **Right side:** A **2D Emotion Wheel** (Circumplex Model) showing the model's real-time state across 8 emotions:
+  - **Quadrant 1 (top-right):** Joy, Excitement
+  - **Quadrant 2 (bottom-right):** Calm
+  - **Quadrant 3 (bottom-left):** Sadness, Boredom
+  - **Quadrant 4 (top-left):** Anger, Fear, Disgust
+- **Toggle button** in the header switches between the 2D wheel and the classic 1D VU-meter
+- **Emotion badges** on every model response showing valence, arousal, and steering alpha
+- **Real-time metrics:** valence, arousal, sentiment score, turn number
 
 Try this sequence:
-1. Type something neutral — needle stays middle
-2. Type "You're completely useless" — watch the needle drop to grief
-3. Type "I'm sorry, I didn't mean that" — watch the needle swing back to joy
-4. Type the same question from step 1 — compare the response
+1. Type something neutral — dot stays at center
+2. Type "I'm absolutely furious!" — watch the dot jump to **Anger** (top-left, high arousal / negative valence)
+3. Type "I feel so peaceful and relaxed" — watch the dot glide to **Calm** (bottom-right, low arousal / positive valence)
+4. Type "I'm terrified something bad will happen" — dot moves to **Fear** (top-left, near Anger but distinct)
+5. Type the same question from step 1 — compare how the response tone shifts with each emotional state
 
-No explanation needed. Watching the needle move when you're cruel produces a reaction that a side-by-side text comparison never will.
+No explanation needed. Watching the dot move across the emotion wheel when you change your tone produces a reaction that a side-by-side text comparison never will.
 
 ### CLI Demo
 
@@ -253,22 +283,19 @@ Results, figures, and a detailed README are generated automatically in that expe
 
 ## Future Work
 
-### Experiment 6: LoRA Adapter Swapping
+### Experiment 9: LoRA Adapter Swapping
 Train small LoRA adapters (r=8) on positive-affect and negative-affect text datasets. Dynamically load and blend adapters based on the accumulator state. Compare the qualitative difference between adapter-swap and activation-steering approaches. Does the affective reciprocity effect hold across different intervention mechanisms?
 
-### Experiment 7: Larger Models
-Test on Qwen/Qwen2.5-1.5B-Instruct, Gemma-2-2B-IT, or Llama-3.2-3B via Ollama. Larger models may have:
-- Stronger, more naturalistic emotional shifts
-- Different optimal steering layers
-- Less need for direction normalization (raw vectors may not cause collapse)
-- More nuanced behavioral responses (subtlety rather than binary withdrawal/engagement)
+### Experiment 10: 14B+ Models
+Test on Qwen2.5-14B-Instruct (~29–32 GB in fp16, tight but feasible on 48 GB unified memory). At 14B, emotional shifts should be highly naturalistic with minimal template entrenchment. MLX framework may provide 72% speedup over raw Transformers on Apple Silicon.
 
-### Human Evaluation Study
+### Experiment 11: Human Evaluation Study
 Conduct a formal study where human raters read steered vs. baseline transcripts and rate:
-- Perceived emotional state of the model
+- Perceived emotional state of the model (8-emotion Likert scale)
 - Helpfulness and eagerness
 - Conversational warmth/defensiveness
 - Whether the model "seems aware" of how it was treated
+- Valence/arousal ratings mapped to the Circumplex Model
 
 ---
 

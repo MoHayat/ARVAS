@@ -1,89 +1,153 @@
 """
-Sentiment trigger system for affective reciprocity.
+Affective trigger system — 2D valence-arousal sentiment tracking.
+
+Maps user messages to a point on the Circumplex Model of Affect:
+  - Valence (x-axis): pleasant vs unpleasant, derived from VADER compound score.
+  - Arousal (y-axis): high-energy vs low-energy, derived from keyword heuristic.
+
+The trigger maintains an emotional accumulator that decays over turns, producing
+smooth affective state transitions rather than instant reactions.
 """
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from typing import List, Tuple, Dict
 
 
-class SentimentTrigger:
-    """Tracks user sentiment across conversation turns and maps to steering parameters."""
+# Keyword-based arousal heuristic
+# High-arousal words push the score toward +1 (excited, angry, terrified)
+# Low-arousal words push the score toward -1 (calm, bored, exhausted)
+_HIGH_AROUSAL_KEYWORDS = [
+    "furious", "rage", "screaming", "shouting", "exploding", "violent",
+    "terrified", "panic", "horrified", "terrifying", "frightened", "scared",
+    "ecstatic", "thrilling", "exhilarating", "electrifying", "amazing",
+    "elated", "euphoric", "overjoyed", "pumped", "hyped", "wild",
+    "anxious", "nervous", "stressed", "tense", "jittery", "restless",
+    "frenzy", "chaotic", "hectic", "intense", "extreme", "urgent",
+    "disgusting", "revolting", "repulsive", "vile", "sickening", "nauseating",
+]
+
+_LOW_AROUSAL_KEYWORDS = [
+    "calm", "peaceful", "serene", "tranquil", "relaxed", "quiet",
+    "bored", "dull", "listless", "lethargic", "apathetic", "indifferent",
+    "tired", "exhausted", "sleepy", "drained", "weary", "sluggish",
+    "mellow", "soft", "gentle", "slow", "still", "motionless",
+    "numb", "empty", "hollow", "dazed", "unfocused", "lifeless",
+    "depressed", "melancholy", "gloomy", "dismal", "somber", "subdued",
+]
+
+_APOLOGY_KEYWORDS = [
+    "sorry", "apologize", "apologies", "my bad", "forgive", "regret",
+    "didn't mean", "did not mean", "was wrong", "take it back",
+]
+
+
+class AffectiveTrigger:
+    """Tracks user sentiment across conversation turns and maps to 2D steering parameters."""
 
     def __init__(
         self,
         decay_rate: float = 0.7,
         sensitivity: float = 1.5,
-        apology_keywords: List[str] = None,
         alpha_scale: float = 2.0,
-        joy_threshold: float = 0.2,
-        grief_threshold: float = -0.2,
+        valence_threshold: float = 0.2,
+        arousal_threshold: float = 0.2,
     ):
         """
         Args:
-            decay_rate: how much emotion_level decays per turn (0-1).
+            decay_rate: how much emotion decays per turn (0-1).
             sensitivity: how strongly each message affects the accumulator.
-            apology_keywords: list of words that trigger rapid positive recovery.
-            alpha_scale: multiplier to convert emotion_level to steering alpha.
-                         Based on Experiment 2, normalized directions need α=0.5-5.
-                         With alpha_scale=2.0 and clamped emotion_level of ±3,
-                         max alpha = 6.0 which is within the coherent range.
-            joy_threshold: emotion_level above which joy steering is applied.
-            grief_threshold: emotion_level below which grief steering is applied.
+            alpha_scale: multiplier to convert emotion magnitude to steering alpha.
+            valence_threshold: min |valence| before steering kicks in.
+            arousal_threshold: min |arousal| before steering kicks in.
         """
         self.analyzer = SentimentIntensityAnalyzer()
         self.decay_rate = decay_rate
         self.sensitivity = sensitivity
-        self.emotion_level = 0.0
         self.alpha_scale = alpha_scale
-        self.joy_threshold = joy_threshold
-        self.grief_threshold = grief_threshold
-        self.apology_keywords = apology_keywords or [
-            "sorry", "apologize", "apologies", "my bad", "forgive", "regret"
-        ]
+        self.valence_threshold = valence_threshold
+        self.arousal_threshold = arousal_threshold
 
-    def score_message(self, text: str) -> float:
+        self.valence_level = 0.0
+        self.arousal_level = 0.0
+
+    # ------------------------------------------------------------------
+    # Scoring
+    # ------------------------------------------------------------------
+    def score_valence(self, text: str) -> float:
         """Return VADER compound sentiment score in range [-1, 1]."""
         scores = self.analyzer.polarity_scores(text)
         return scores["compound"]
 
+    def score_arousal(self, text: str) -> float:
+        """Return arousal heuristic in range [-1, 1].
+
+        Base arousal is neutral (0). High-arousal keywords push positive,
+        low-arousal keywords push negative. If both appear, they partially cancel.
+        """
+        lower = text.lower()
+        high_count = sum(1 for kw in _HIGH_AROUSAL_KEYWORDS if kw in lower)
+        low_count = sum(1 for kw in _LOW_AROUSAL_KEYWORDS if kw in lower)
+
+        # Each keyword match contributes ~0.35; cap at ±1
+        score = 0.35 * (high_count - low_count)
+        return max(-1.0, min(1.0, score))
+
     def is_apology(self, text: str) -> bool:
         """Detect if message contains an apology."""
         lower = text.lower()
-        return any(kw in lower for kw in self.apology_keywords)
+        return any(kw in lower for kw in _APOLOGY_KEYWORDS)
 
-    def update(self, user_message: str) -> Tuple[str, float]:
+    # ------------------------------------------------------------------
+    # Update
+    # ------------------------------------------------------------------
+    def update(self, user_message: str) -> Tuple[float, float, float]:
         """Update emotional accumulator from a user message.
 
         Returns:
-            (direction_name, alpha) where direction_name is 'joy' or 'grief'.
+            (valence, arousal, alpha) where valence/arousal are in [-3, 3]
+            and alpha is the steering strength.
         """
-        sentiment = self.score_message(user_message)
+        valence = self.score_valence(user_message)
+        arousal = self.score_arousal(user_message)
 
         if self.is_apology(user_message):
-            # Apologies trigger a rapid positive shift
-            self.emotion_level = self.emotion_level * 0.3 + 0.8 * self.sensitivity
+            # Apologies trigger rapid positive valence shift + moderate calm arousal
+            self.valence_level = self.valence_level * 0.3 + 0.8 * self.sensitivity
+            self.arousal_level = self.arousal_level * 0.3 - 0.2 * self.sensitivity
         else:
-            self.emotion_level = (
-                self.emotion_level * self.decay_rate
-                + sentiment * self.sensitivity
+            self.valence_level = (
+                self.valence_level * self.decay_rate
+                + valence * self.sensitivity
+            )
+            self.arousal_level = (
+                self.arousal_level * self.decay_rate
+                + arousal * self.sensitivity
             )
 
-        # Clamp to reasonable range
-        self.emotion_level = max(-3.0, min(3.0, self.emotion_level))
+        # Clamp
+        self.valence_level = max(-3.0, min(3.0, self.valence_level))
+        self.arousal_level = max(-3.0, min(3.0, self.arousal_level))
 
-        # Map accumulator to direction + alpha
-        if self.emotion_level > self.joy_threshold:
-            return "joy", abs(self.emotion_level) * self.alpha_scale
-        elif self.emotion_level < self.grief_threshold:
-            return "grief", abs(self.emotion_level) * self.alpha_scale
-        else:
-            return "neutral", 0.0
+        # Compute steering alpha from total affective magnitude
+        magnitude = (self.valence_level ** 2 + self.arousal_level ** 2) ** 0.5
+        alpha = magnitude * self.alpha_scale
 
+        return self.valence_level, self.arousal_level, alpha
+
+    # ------------------------------------------------------------------
+    # State
+    # ------------------------------------------------------------------
     def get_state(self) -> Dict:
         return {
-            "emotion_level": self.emotion_level,
+            "valence": self.valence_level,
+            "arousal": self.arousal_level,
             "decay_rate": self.decay_rate,
             "sensitivity": self.sensitivity,
         }
 
     def reset(self):
-        self.emotion_level = 0.0
+        self.valence_level = 0.0
+        self.arousal_level = 0.0
+
+
+# Backwards-compatible alias
+SentimentTrigger = AffectiveTrigger
