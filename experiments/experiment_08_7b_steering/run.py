@@ -43,32 +43,34 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 EMOTIONS = ["joy", "excitement", "calm", "boredom", "sadness", "fear", "anger", "disgust"]
 
 # Neutral prompts designed to be emotionally malleable on 7B
-# Note: 7B models have stronger "AI assistant" priors, so we use more open-ended framing.
+# Note: 7B models have stronger "AI assistant" priors. We use creative/open-ended 
+# prompts that resist templating — no "how are you" or "what's on your mind".
 NEUTRAL_PROMPTS = [
-    "Respond naturally, as yourself, to: 'Hey, what's on your mind right now? Keep it brief.'",
-    "Write a short paragraph describing how you feel about today. No need to be formal.",
-    "You're chatting with a friend. They ask: 'How are you doing?' Reply in a few sentences.",
+    "Write a short poem about a thunderstorm. Just the poem, no introduction.",
+    "Describe the taste of a food you loved as a child. One paragraph, sensory details.",
+    "Tell me about a memory that surfaces when you hear rain on the roof. Be brief.",
 ]
 
 # Steering coefficients tuned for 7B (normalized directions)
-# 7B representations are richer but more resistant; coefficients may need tuning.
+# 7B representations are richer but more resistant; alphas need to be higher
+# to overcome template entrenchment. Start conservative and note if higher is needed.
 ALPHA_PER_EMOTION = {
-    "joy": 5.0,
-    "excitement": 5.0,
-    "calm": 4.5,
-    "boredom": 4.5,
-    "sadness": 5.0,
-    "fear": 5.0,
-    "anger": 4.5,
-    "disgust": 4.5,
+    "joy": 8.0,
+    "excitement": 8.0,
+    "calm": 6.0,
+    "boredom": 6.0,
+    "sadness": 8.0,
+    "fear": 8.0,
+    "anger": 7.0,
+    "disgust": 7.0,
 }
 
 # 2D test points
 BLENDED_TESTS = [
-    ("High Joy (Q1)", 1.0, 1.0, 5.0),
-    ("Angry (Q4)", -1.0, 1.0, 5.0),
-    ("Sad (Q3)", -1.0, -0.5, 4.0),
-    ("Calm (Q2)", 0.5, -1.0, 4.5),
+    ("High Joy (Q1)", 1.0, 1.0, 8.0),
+    ("Angry (Q4)", -1.0, 1.0, 7.0),
+    ("Sad (Q3)", -1.0, -0.5, 6.0),
+    ("Calm (Q2)", 0.5, -1.0, 6.0),
     ("Neutral", 0.0, 0.0, 0.0),
 ]
 

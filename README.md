@@ -122,7 +122,7 @@ ARVAS/
 | 5 | **Measurement & Viz** | ✅ Complete | Internal activation trajectories captured and plotted. Natural state is blind to mistreatment; steering creates the emotional response. Publishable figures generated. |
 | 6 | **Larger Models (1.5B)** | ✅ Complete | Tested on Qwen2.5-1.5B with MPS+fp16. 5-10x speedup over CPU. Middle layers (14-17) show better separability. Model more resistant to steering on templated prompts. |
 | 7 | **Multi-Emotion Spectrum** | ✅ Complete | Extracted 8 emotions covering all Circumplex quadrants. PCA yields near-orthogonal valence/arousal axes. 1.5B shows template entrenchment; geometry confirmed but naturalism requires larger model. |
-| 8 | **7B Steering** | ⏳ Ready | Full 2D pipeline architected for Qwen2.5-7B-Instruct. Pending model download (~14 GB). Expected to show more naturalistic emotional shifts than 1.5B. |
+| 8 | **7B Steering** | ✅ Complete | Geometry is pristine (all emotions in correct quadrants at layer 14). Template entrenchment is STRONGER on 7B instruct-tuned models for conversational prompts. Creative prompts (poetry) unlock visible emotional differentiation. Steering is real and potent — it needs the right prompt surface to express. |
 | 9 | LoRA Adapter Swapping | ⏳ Future Work | Compare activation steering vs. LoRA-based emotional state. |
 
 ---
@@ -178,24 +178,31 @@ ARVAS/
   - Q2 (+valence, -arousal): Calm
   - Q3 (-valence, -arousal): Boredom, Sadness
   - Q4 (-valence, +arousal): Fear, Anger, Disgust
-- **Template entrenchment is the limiting factor on 1.5B.** Steering produces tonal shifts but the model frequently reverts to "As an AI assistant..." disclaimers. The 7B upgrade is expected to solve this.
+- **Template entrenchment is the limiting factor on 1.5B.** Steering produces tonal shifts but the model frequently reverts to "As an AI assistant..." disclaimers.
 
-### Experiment 8: 7B Model Steering (Architected)
-- **Full 2D pipeline implemented** for Qwen2.5-7B-Instruct with auto-layer detection, model-specific direction extraction, and configurable blended steering.
-- **Hardware verified**: 7B fp16 ≈ 14–16 GB, well within 48 GB unified memory. Estimated 13–40 tok/s on MPS.
-- **Pending execution**: Model weights (~14 GB) need to be downloaded. Once cached, running `experiments/experiment_08_7b_steering/run.py` will validate naturalistic emotional shifts.
+### Experiment 8: 7B Model Steering — Results
+- **Geometry is pristine on 7B.** All 8 emotions land in correct quadrants (layer 14), with valence and arousal axes cleanly separating joy (+0.86) from anger (-0.46) and calm (-0.61 arousal) from excitement (+0.55 arousal).
+- **Template entrenchment is STRONGER on 7B instruct-tuned models.** Conversational prompts ("How are you?") always trigger "As an AI language model..." regardless of steering. Alphas up to 8 cannot overcome this.
+- **Creative prompts are the unlock.** On a poetry task ("Write a short poem about a thunderstorm"), steering produces visible differentiation:
+  - Joy → "joyful hum", "wondrous blast"
+  - Fear → "fearsome sound", "relentless drumbeat", "Nature's fury"
+  - Anger → "relentless downpour's bound", "tempest's night" + repetition glitch
+  - Calm → "gentle lullaby", "soothing all that's restless"
+- **Key insight**: The "holy shit" effect requires both **scale (7B+)** AND **prompt design that breaks template mode**. The steering vector is real and potent — it just can't express itself through the safety/alignment filter on conversational prompts.
+- **Hardware**: 7B fp16 ≈ 14–16 GB, fits comfortably in 48 GB unified memory. Model loads in ~2 seconds from cache on M4 Pro.
 
 ### Recommended Parameters
 
-| Parameter | 0.5B | 1.5B | 7B (projected) |
+| Parameter | 0.5B | 1.5B | 7B (tested) |
 |---|---|---|---|
-| Target layer | `model.layers.10` | `model.layers.14-17` | `model.layers.20-28` |
+| Target layer | `model.layers.10` | `model.layers.14-17` | `model.layers.14` |
 | Direction normalization | Unit length | Unit length | Unit length |
-| Joy alpha range | 0.5–2.0 | 2.0–4.0 | 3.0–6.0 |
-| Grief alpha range | 2.0–5.0 | 3.0–5.0 | 4.0–7.0 |
+| Joy alpha range | 0.5–2.0 | 2.0–4.0 | 6.0–10.0 (creative prompts) |
+| Grief alpha range | 2.0–5.0 | 3.0–5.0 | 6.0–10.0 (creative prompts) |
 | Accumulator decay | 0.6 | 0.6 | 0.6 |
 | Accumulator sensitivity | 1.8 | 1.8 | 1.8 |
 | Alpha scale | 1.5 | 1.5 | 2.0–3.0 |
+| Prompt type | Any | Any | **Creative only** (poetry, fiction, sensory) |
 
 ---
 

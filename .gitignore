@@ -34,6 +34,7 @@ venv.bak/
 
 # Model outputs (large binary files)
 outputs/directions/*.pt
+outputs/directions_7b/*.pt
 outputs/experiment_*/
 outputs/figures/
 
