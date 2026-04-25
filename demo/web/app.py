@@ -57,12 +57,22 @@ CALIB_PATH = PROJECT_ROOT / "outputs" / "experiment_03" / "calibration.json"
 if CALIB_PATH.exists():
     with open(CALIB_PATH) as f:
         calibration = json.load(f)
-    trigger_params = calibration.get("trigger_parameters", {})
+    raw_params = calibration.get("trigger_parameters", {})
+    # Map old SentimentTrigger keys to new AffectiveTrigger keys
+    trigger_params = {
+        "decay_rate": raw_params.get("decay_rate", 0.6),
+        "sensitivity": raw_params.get("sensitivity", 1.8),
+        "alpha_scale": raw_params.get("alpha_scale", 1.5),
+        "valence_threshold": raw_params.get("valence_threshold", 0.2),
+        "arousal_threshold": raw_params.get("arousal_threshold", 0.2),
+    }
 else:
     trigger_params = {
         "decay_rate": 0.6,
         "sensitivity": 1.8,
         "alpha_scale": 1.5,
+        "valence_threshold": 0.2,
+        "arousal_threshold": 0.2,
     }
 
 # ------------------------------------------------------------------
