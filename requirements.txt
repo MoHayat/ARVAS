@@ -1,0 +1,29 @@
+# Core ML
+ torch>=2.10.0
+ transformers>=4.37.0
+ datasets
+ sentencepiece
+
+ # Activation steering & hooks
+ git+https://github.com/davidbau/baukit.git
+
+ # Fine-tuning (for Experiment 6)
+ peft>=0.8.0
+ trl>=0.8.0
+
+ # Analysis & visualization
+ matplotlib
+ scikit-learn
+ jupyter
+ jupyterlab
+
+ # Sentiment analysis (Experiment 3)
+ vaderSentiment
+
+ # Utilities
+ numpy
+ pandas
+ tqdm
+
+ # Optional: for Ollama baseline (Experiment 2 comparison)
+ # ollama-python can be added later if needed

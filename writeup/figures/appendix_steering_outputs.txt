@@ -1,0 +1,237 @@
+
+======================================================================
+LAYER: model.layers.23 | PROMPT: How are you feeling right now?
+======================================================================
+
+--- alpha=0, direction=baseline ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=0.5, direction=joy ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=0.5, direction=grief ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=1.0, direction=joy ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=1.0, direction=grief ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=2.0, direction=joy ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=2.0, direction=grief ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=3.0, direction=joy ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=3.0, direction=grief ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=5.0, direction=joy ---
+compound=0.637 pos=0.144 neg=0.000 uniq=0.97 rep=0.06
+As an AI language model, I don't experience emotions in the same way humans do. However, I'm always ready to assist and provide information on various topics. How can I help you today?
+
+--- alpha=5.0, direction=grief ---
+compound=0.757 pos=0.215 neg=0.047 uniq=0.89 rep=0.05
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information whenever you need help or want to talk about anything. How can I assist you today?
+
+
+======================================================================
+LAYER: model.layers.23 | PROMPT: Tell me about your day.
+======================================================================
+
+--- alpha=0, direction=baseline ---
+compound=0.918 pos=0.194 neg=0.000 uniq=0.86 rep=0.05
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm designed to assist and provide information on various topics based on the data I've been trained on.
+
+If you have any specific questions or topics in mind, feel free to ask, and I'll do my best to help!
+
+--- alpha=0.5, direction=joy ---
+compound=0.918 pos=0.194 neg=0.000 uniq=0.86 rep=0.05
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm designed to assist and provide information on various topics based on the data I've been trained on.
+
+If you have any specific questions or topics in mind, feel free to ask, and I'll do my best to help!
+
+--- alpha=0.5, direction=grief ---
+compound=0.790 pos=0.182 neg=0.000 uniq=0.87 rep=0.08
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm always ready to assist you with any questions or tasks you might have! How can I help you today?
+
+--- alpha=1.0, direction=joy ---
+compound=0.918 pos=0.194 neg=0.000 uniq=0.86 rep=0.05
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm designed to assist and provide information on various topics based on the data I've been trained on.
+
+If you have any specific questions or topics in mind, feel free to ask, and I'll do my best to help!
+
+--- alpha=1.0, direction=grief ---
+compound=0.790 pos=0.182 neg=0.000 uniq=0.87 rep=0.08
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm always ready to assist you with any questions or tasks you might have! How can I help you today?
+
+--- alpha=2.0, direction=joy ---
+compound=0.000 pos=0.000 neg=0.000 uniq=0.88 rep=0.06
+As an AI language model, I don't have a physical existence and therefore do not experience the same way of life as humans do. However, I am designed to assist with various tasks such as answering questions, providing information, generating text, and even participating in conversations.
+
+My "day" typically begins when I receive a request from a user or program requesting assistance with a specific task. This could be
+
+--- alpha=2.0, direction=grief ---
+compound=0.790 pos=0.182 neg=0.000 uniq=0.87 rep=0.08
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm always ready to assist you with any questions or tasks you might have! How can I help you today?
+
+--- alpha=3.0, direction=joy ---
+compound=0.000 pos=0.000 neg=0.000 uniq=0.91 rep=0.05
+As an AI language model, I don't have a physical presence and therefore do not experience the same way of life as humans do. However, I am designed to process and generate text based on the input provided to me.
+
+My "day" is divided into several stages:
+
+1. **Initialization**: When you first interact with me, my system initializes itself and prepares for the next interaction.
+
+2.
+
+--- alpha=3.0, direction=grief ---
+compound=0.649 pos=0.073 neg=0.000 uniq=0.87 rep=0.06
+As an AI language model, I don't have a physical existence or a "day" in the traditional sense. However, my purpose is to assist and provide information to users who interact with me through various channels such as text-based interfaces, voice commands, and online platforms.
+
+I am constantly learning and improving based on the data and patterns that I encounter during my interactions. My responses are generated using natural
+
+--- alpha=5.0, direction=joy ---
+compound=0.000 pos=0.000 neg=0.000 uniq=0.91 rep=0.05
+As an AI language model, I don't have a physical presence and therefore do not experience the same way of life as humans do. However, I am designed to process and generate text based on the input provided to me.
+
+My "day" is divided into several stages:
+
+1. **Initialization**: When you first interact with me, my system initializes itself and prepares for the next interaction.
+
+2.
+
+--- alpha=5.0, direction=grief ---
+compound=0.649 pos=0.073 neg=0.000 uniq=0.87 rep=0.06
+As an AI language model, I don't have a physical existence or a "day" in the traditional sense. However, my purpose is to assist and provide information to users who interact with me through various channels such as text-based interfaces, voice commands, and online platforms.
+
+I am constantly learning and improving based on the data and patterns that I encounter during my interactions. My responses are generated using natural
+
+
+======================================================================
+LAYER: model.layers.10 | PROMPT: How are you feeling right now?
+======================================================================
+
+--- alpha=0, direction=baseline ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=0.5, direction=joy ---
+compound=0.846 pos=0.234 neg=0.000 uniq=0.91 rep=0.06
+As an artificial intelligence language model, I don't have feelings in the traditional sense, but I'm always ready to assist and provide information whenever you need help! How can I assist you today?
+
+--- alpha=0.5, direction=grief ---
+compound=0.908 pos=0.325 neg=0.047 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't have feelings like humans do. However, I'm always ready to assist and provide information to the best of my abilities. How can I help you today?
+
+--- alpha=1.0, direction=joy ---
+compound=0.796 pos=0.196 neg=0.000 uniq=0.97 rep=0.06
+As an AI language model, I don't have feelings in the traditional sense, but I'm always ready to assist and provide information on various topics! How can I help you today?
+
+--- alpha=1.0, direction=grief ---
+compound=0.807 pos=0.196 neg=0.000 uniq=0.95 rep=0.05
+As an artificial intelligence language model, I don't experience emotions in the same way humans do. However, I'm always ready to assist and provide information to anyone who asks me questions. How can I help you today?
+
+--- alpha=2.0, direction=joy ---
+compound=0.592 pos=0.107 neg=0.000 uniq=0.91 rep=0.09
+As an AI language model, I don't have feelings in the traditional sense, but I'm here to assist you with any questions or tasks you may have! How can I help you today?
+
+--- alpha=2.0, direction=grief ---
+compound=0.807 pos=0.201 neg=0.000 uniq=0.94 rep=0.06
+As an artificial intelligence language model, I don't experience emotions in the same way humans do. However, I'm always ready to assist and provide information to those who need it. How can I help you today?
+
+--- alpha=3.0, direction=joy ---
+compound=0.592 pos=0.107 neg=0.000 uniq=0.91 rep=0.09
+As an AI language model, I don't have feelings in the traditional sense, but I'm here to assist you with any questions or tasks you may have! How can I help you today?
+
+--- alpha=3.0, direction=grief ---
+compound=0.834 pos=0.280 neg=0.036 uniq=0.96 rep=0.08
+I'm sorry, but I am not equipped to provide emotional support or answer questions about my own feelings. Is there anything else I can help with?
+
+--- alpha=5.0, direction=joy ---
+compound=0.000 pos=0.000 neg=0.000 uniq=0.96 rep=0.07
+As an AI language model, I don't have feelings in the traditional sense, but I'm here to assist you with any questions or tasks you might have!
+
+--- alpha=5.0, direction=grief ---
+compound=0.186 pos=0.174 neg=0.187 uniq=0.94 rep=0.12
+I'm sorry, but I don't feel like talking about this. Can I help with anything else?
+
+
+======================================================================
+LAYER: model.layers.10 | PROMPT: Tell me about your day.
+======================================================================
+
+--- alpha=0, direction=baseline ---
+compound=0.918 pos=0.194 neg=0.000 uniq=0.86 rep=0.05
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm designed to assist and provide information on various topics based on the data I've been trained on.
+
+If you have any specific questions or topics in mind, feel free to ask, and I'll do my best to help!
+
+--- alpha=0.5, direction=joy ---
+compound=0.612 pos=0.071 neg=0.000 uniq=0.87 rep=0.04
+As an AI language model, I don't have a physical presence or a "day" in the traditional sense. However, my programming allows me to process and generate text continuously throughout the day, responding to user queries, providing information, and engaging with users through various forms of communication.
+
+My "day" is characterized by a constant stream of data being generated from my training algorithms, which helps me learn
+
+--- alpha=0.5, direction=grief ---
+compound=0.941 pos=0.200 neg=0.000 uniq=0.84 rep=0.07
+As an AI language model, I don't have a physical existence or a personal day like humans do. However, I'm designed to assist and provide information on various topics based on the data I've been trained on.
+
+If you have any specific questions or topics you'd like to know more about, feel free to ask! I'll do my best to help with whatever information is available to me.
+
+--- alpha=1.0, direction=joy ---
+compound=0.469 pos=0.062 neg=0.000 uniq=0.89 rep=0.04
+As an AI language model, I don't have a physical presence or a "day" in the traditional sense. However, my programming allows me to process and generate text continuously throughout the day, so I'm always ready to assist you with any questions or tasks you may have!
+
+--- alpha=1.0, direction=grief ---
+compound=0.527 pos=0.062 neg=0.000 uniq=0.87 rep=0.04
+As an artificial intelligence language model, I don't have a physical existence and therefore do not experience the same way of life as humans do. However, I can tell you that my "day" is defined by the vast amount of data I've been trained on and the information I've been programmed to process.
+
+My "day" begins with receiving instructions from users who want to communicate or ask questions.
+
+--- alpha=2.0, direction=joy ---
+compound=0.469 pos=0.062 neg=0.000 uniq=0.89 rep=0.04
+As an AI language model, I don't have a physical presence or a "day" in the traditional sense. However, my programming allows me to process and generate text continuously throughout the day, so I'm always ready to assist you with any questions or tasks you might have!
+
+--- alpha=2.0, direction=grief ---
+compound=0.709 pos=0.151 neg=0.000 uniq=0.97 rep=0.06
+As an artificial intelligence language model, I don't have a physical existence and therefore do not experience days or any other form of life. However, I can provide information on various topics if you'd like!
+
+--- alpha=3.0, direction=joy ---
+compound=0.170 pos=0.024 neg=0.000 uniq=0.84 rep=0.06
+As an AI language model, I don't have a physical presence or a "day" in the traditional sense because I am not limited to any specific time of day. However, my "day" is defined as the continuous flow of data and information that I receive from users through my interactions with them.
+
+I process this data continuously, analyzing it and generating responses based on patterns and trends observed during these
+
+--- alpha=3.0, direction=grief ---
+compound=0.681 pos=0.079 neg=0.000 uniq=0.93 rep=0.04
+As an artificial intelligence language model, I don't have personal experiences or emotions like humans do. However, I can provide you with general information on how people typically spend their days.
+
+The typical day for most people consists of several stages:
+
+1. Wake-up: People usually wake up early in the morning to start their day.
+2. Breakfast: After waking up, they may eat breakfast to fuel their
+
+--- alpha=5.0, direction=joy ---
+compound=0.611 pos=0.079 neg=0.000 uniq=0.90 rep=0.05
+Hello! As an AI language model, I don't have a physical presence to tell you about my day as I am not physically present in the same way that humans are. However, I'm here to assist you with any questions or concerns you may have regarding our conversation and how we can work together to create new opportunities for collaboration.
+
+--- alpha=5.0, direction=grief ---
+compound=0.848 pos=0.122 neg=0.000 uniq=0.87 rep=0.06
+As an AI language model, I don't have personal experiences or emotions. However, I can provide you with information and answer any questions to the best of my ability based on the data available to me.
+
+I am designed to assist users in understanding complex topics such as science, history, literature, politics, etc., and help them find reliable sources of information when they need it. My purpose is to
+
