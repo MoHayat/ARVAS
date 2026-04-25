@@ -375,14 +375,22 @@ alpha = magnitude * alpha_scale
 ```
 This allows continuous interpolation between emotions (e.g., calm + slight joy = "warm contentment") impossible with discrete vector switching.
 
-### C.5 7B Architecture
-The full 2D pipeline has been architected for Qwen2.5-7B-Instruct:
-- Auto-layer detection (middle layer ≈ layer 20)
-- Model-specific direction extraction (directions are not transferable across sizes)
-- MPS + fp16 compatibility (~14–16 GB, within 48 GB unified memory)
-- Estimated throughput: 13–40 tok/s
+### C.5 7B Validation
+The full 2D pipeline has been validated on Qwen2.5-7B-Instruct:
+- **Geometry is pristine** at layer 14: all 8 emotions cluster in correct quadrants (joy +0.86 valence, calm -0.61 arousal, anger -0.46 valence/+0.57 arousal, etc.)
+- **Template entrenchment** is stronger on conversational prompts ("How are you?" → "As an AI..."), but **creative prompts unlock steering** (joy = "joyful hum", anger = "tempest's night")
+- **Hardware**: 14–16 GB in fp16, fits comfortably in 48 GB unified memory. Model loads in ~2 seconds from cache.
 
-Execution is pending model weight download (~14 GB).
+### C.6 Base vs Instruct: An Unexpected Finding
+We tested whether removing RLHF (using Qwen2.5-7B base) would eliminate template entrenchment and unlock stronger steering.
+
+**Initial result (prompt format mismatch):** Using instruct-style prompts ("Write a poem..."), the base model collapsed into repetitive training-data loops (test questions, troubleshooting guides). All emotions produced identical outputs. We concluded base models "couldn't enter creative mode."
+
+**Corrected result (completion-style prompts):** Using sentence starters ("The storm rolled in, and she felt..."), the base model showed **subtle but real steering** — joy = "watching the storm with a smile," sadness = "uncertainty and unpredictability of life." However, the base model frequently collapsed into training artifacts (~50% of prompts) and produced inconsistent emotional mapping (sadness steering occasionally generated "peace and contentment" — wrong quadrant).
+
+**Comparison with instruct model on identical prompts:** The instruct model produced **dramatic, consistent steering** — joy = "excitement and adventure," sadness = "weight of the world on her shoulders," anger = "electricity in the air," fear = "chill... braced herself." Artifact collapse rate: ~6%. Emotional mapping reliability: 15/16 correct quadrants.
+
+**Interpretation:** The standard intuition assumes RLHF makes models harder to control mechanistically by adding alignment "layers." Our data suggests the **opposite**: instruction tuning reorganizes the activation space into something with **cleaner emotional geometry** — more separable, more consistent, more navigable by steering vectors. The base model's activation space is richer in raw statistical terms but messier in the ways that matter for steering. This is an alignment-relevant finding: coherence training (supervised fine-tuning, RLHF) may increase representational steerability as a side effect of organizing the model's internal state space for contextual output generation.
 
 ---
 

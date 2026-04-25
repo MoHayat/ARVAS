@@ -148,9 +148,19 @@ The entire pipeline is now validated on **7B-scale models** (Qwen2.5-7B-Instruct
 
 But we hit a surprising wall: **conversational prompts trigger "As an AI language model..." templates that block steering entirely.** We thought RLHF was the enemy. So we tested the base model (no RLHF at all).
 
-**The base model was worse.** Without alignment, the model couldn't generate coherent novel text at all. It just regurgitated repetitive training data — laptop troubleshooting, Chinese test questions, weather facts. No templates, but also no creativity. Steering had nothing to work with.
+**First test (wrong prompts):** We gave the base model instruct-style prompts ("Write a poem..."), which it doesn't parse as instructions. It fell into repetitive training-data loops — laptop troubleshooting, Chinese test questions. No steering visible. We concluded: "Base models can't enter creative mode."
 
-**The insight: RLHF doesn't block steering — it enables the coherent generation that makes steering meaningful.** The templates are a side effect, but the solution isn't removing alignment. It's **prompt design.** Creative, open-ended prompts break the model out of template mode and into creative generation mode — the exact surface where steering vectors can express themselves.
+**Second test (corrected):** A cofounder pointed out the real issue: prompt format mismatch. Base models need *completion-style* prompts — sentence starters they were trained to continue. We re-tested with prompts like *"The storm rolled in from the east, and she sat by the window feeling..."*
+
+**The base model DID show steering.** Joy produced "watching the storm with a smile." Sadness produced "uncertainty and unpredictability of life." Anger produced "hard and set face, tight bun." The steering was subtle, but real.
+
+**But the instruct model was dramatically better.** On the SAME completion prompts, the instruct model produced: joy = "excitement and adventure," sadness = "weight of the world on her shoulders," anger = "electricity in the air," fear = "chill... braced herself." The differentiation was clearer, more consistent, and the model rarely collapsed into training artifacts.
+
+**The deeper finding: Instruction tuning makes models MORE steerable, not less.**
+
+This inverts the standard intuition. Everyone assumes RLHF adds alignment "layers" that make mechanistic control harder. Our data suggests the opposite: instruction tuning reorganizes the model's internal activation space into something with **cleaner emotional geometry** — more separable, more consistent, more navigable by steering vectors. The base model's activation space is richer in raw statistical terms but messier in the ways that matter for steering.
+
+**Practical takeaway:** Use instruct-tuned models for steering (they have cleaner geometry), and use completion-style or creative prompts to break template mode. The templates are a surface-level phenomenon — underneath, the instruct model's internal state space is better organized for emotional navigation.
 
 ---
 

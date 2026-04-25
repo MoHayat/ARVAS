@@ -123,7 +123,7 @@ ARVAS/
 | 6 | **Larger Models (1.5B)** | ✅ Complete | Tested on Qwen2.5-1.5B with MPS+fp16. 5-10x speedup over CPU. Middle layers (14-17) show better separability. Model more resistant to steering on templated prompts. |
 | 7 | **Multi-Emotion Spectrum** | ✅ Complete | Extracted 8 emotions covering all Circumplex quadrants. PCA yields near-orthogonal valence/arousal axes. 1.5B shows template entrenchment; geometry confirmed but naturalism requires larger model. |
 | 8 | **7B Steering** | ✅ Complete | Geometry is pristine (all emotions in correct quadrants at layer 14). Template entrenchment is STRONGER on 7B instruct-tuned models for conversational prompts. Creative prompts (poetry) unlock visible emotional differentiation. Steering is real and potent — it needs the right prompt surface to express. |
-| 8b | **Base vs Instruct** | ✅ Complete | Tested Qwen2.5-7B base model (no RLHF). **Finding: base models are worse for steering.** They have no template entrenchment but also no coherent generation — they fall into repetitive training-data loops. RLHF enables the creative generation surface that steering needs. Solution is prompt design on instruct models, not base models. |
+| 8b | **Base vs Instruct** | ✅ Complete | Tested Qwen2.5-7B base vs Qwen2.5-7B-Instruct with proper completion-style prompts. **Finding: instruction tuning makes models MORE steerable, not less.** Base model shows subtle steering but frequently collapses into training artifacts (~50%) and maps emotions inconsistently. Instruct model shows dramatic, consistent steering with ~6% artifact rate. RLHF reorganizes activation space into cleaner emotional geometry — an alignment-relevant finding that inverts standard intuition. |
 | 9 | LoRA Adapter Swapping | ⏳ Future Work | Compare activation steering vs. LoRA-based emotional state. |
 
 ---
@@ -195,16 +195,27 @@ ARVAS/
 ### Experiment 8b: Base vs Instruct — The RLHF Question
 We tested the cofounder's hypothesis: *does removing RLHF (using a base model) eliminate template entrenchment and unlock stronger steering?*
 
-**Answer: No. Base models are worse for steering, not better.**
+**Initial answer (wrong):** "Base models can't enter creative mode. RLHF enables coherent generation, which is a prerequisite for steering." This was partially incorrect — base models DO generate text when given completion-style prompts (sentence starters they were trained to continue). The failure in our first test was a **prompt format mismatch**: we gave instruct-style prompts ("Write a poem...") to a base model that doesn't parse instructions.
+
+**Corrected answer:** We re-tested with proper completion-style prompts ("The storm rolled in, and she felt..."). Here is what actually happens:
 
 | | Qwen2.5-7B-Instruct (RLHF) | Qwen2.5-7B (Base) |
 |---|---|---|
-| **Template entrenchment** | Yes — "As an AI..." on conversational prompts | No templates at all |
-| **Can generate novel text** | **Yes** — poetry, fiction, sensory descriptions | **No** — falls into repetitive training-data loops (laptop troubleshooting, Chinese test questions) |
-| **Steering visible** | **Yes** on creative prompts (joy = "joyful hum", anger = "tempest's night") | Barely — subtle word substitutions in repetitive text |
-| **Useful for affective reciprocity** | **Yes** | No |
+| **With instruct prompts** | Coherent, differentiated outputs | Collapses into training-data loops (test questions, troubleshooting guides) |
+| **With completion prompts** | **Dramatic, consistent steering** (joy="excitement and adventure", sadness="weight of the world", anger="electricity in the air", fear="chill... braced herself") | **Subtle, inconsistent steering** — some prompts show emotion-appropriate continuations, others collapse into artifacts. Sadness steering occasionally produces "peace and contentment" (wrong quadrant) |
+| **Artifact collapse rate** | ~6% (1 of 16 cases) | ~50% (frequent test-question mode, repetitive loops) |
+| **Emotional mapping consistency** | Reliable — correct quadrant 15/16 times | Unreliable — correct quadrant ~10/16 times |
 
-**Key finding: RLHF enables coherent generation, which is a prerequisite for meaningful steering.** The templates are a side effect, but removing alignment removes the very capability that makes steering visible. The solution is **creative prompt design** on instruct models, not base models.
+**The deeper finding: Instruction tuning makes models MORE steerable, not less.**
+
+The standard intuition is that RLHF adds alignment "layers" that make mechanistic control harder. Our data suggests the opposite: instruction tuning reorganizes the model's internal activation space into something with **cleaner emotional geometry** — more separable, more consistent, more navigable by steering vectors. The base model's activation space is "richer in raw statistical terms but messier in the ways that matter for steering" (credit: cofounder).
+
+This is an **alignment-relevant finding**: supervised fine-tuning and RLHF, intended to make models more helpful and harmless, may have the side effect of making them more mechanistically controllable along emotional dimensions — because coherent output generation requires a more organized internal representation.
+
+**Practical implications:**
+1. Use **instruct-tuned models** for steering (cleaner geometry)
+2. Use **completion-style or creative prompts** (base models need this format; instruct models benefit from it to break template mode)
+3. The "template entrenchment" on conversational prompts is a surface phenomenon — underneath, the instruct model's geometry is better organized
 
 ### Recommended Parameters
 
