@@ -27,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 
+from contextlib import asynccontextmanager
 from activation_utils import load_model_and_tokenizer
 from steering import generate_with_steering
 from sentiment_trigger import SentimentTrigger
@@ -68,23 +69,8 @@ grief_direction = None
 sessions: Dict[str, Dict] = {}
 
 # ------------------------------------------------------------------
-# FastAPI app
+# Lifespan context manager (startup/shutdown)
 # ------------------------------------------------------------------
-app = FastAPI(title="ARVAS Live Demo", version="1.0", lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ------------------------------------------------------------------
-# Startup: Load model
-# ------------------------------------------------------------------
-from contextlib import asynccontextmanager
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -125,6 +111,19 @@ async def lifespan(app: FastAPI):
     
     # Shutdown (cleanup if needed)
     print("Shutting down...")
+
+# ------------------------------------------------------------------
+# FastAPI app
+# ------------------------------------------------------------------
+app = FastAPI(title="ARVAS Live Demo", version="1.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ------------------------------------------------------------------
 # Pydantic models
