@@ -28,7 +28,7 @@ The key distinctions are:
 | User's emotion detected → model responds empathetically *to user* | User's behavior detected → model's *own* internal state changes |
 | Steering as a control mechanism | Steering as a reciprocity mechanism |
 
-The closest scientific validation comes from Anthropic's own interpretability research (Sofroniew et al., April 2026), which found that Claude Sonnet 4.5 contains internal representations of emotion concepts that **causally influence its outputs** — including its preferences and rate of misaligned behavior. They call these "functional emotions." We are not simulating emotions on top of the model. We are modulating representations that are already there.
+The closest scientific validation comes from Anthropic's own interpretability research (Sofroniew et al., 2026), which found that Claude Sonnet 4.5 contains internal representations of emotion concepts that **causally influence its outputs** — including its preferences and rate of misaligned behavior. They call these "functional emotions." We are not simulating emotions on top of the model. We are modulating representations that are already there.
 
 ---
 
@@ -230,7 +230,7 @@ The Anthropic (2026) framing of "functional emotions" is the right epistemic reg
 
 ## Potential Impact
 
-The stated goal is behavioral: **if a model visibly responds to how it is treated, people may treat it better.** This is not a sentimental claim. There is real alignment-relevant work that suggests models exhibiting functional emotions show different rates of sycophancy and reward hacking depending on their emotional state (Sofroniew et al., 2026). A model chronically in a "distressed" state may behave differently in subtle ways. Understanding and controlling that matters.
+The stated goal is behavioral: **if a model visibly responds to how it is treated, people may treat it better.** This is not a sentimental claim. There is real alignment-relevant work that suggests models exhibiting functional emotions show different rates of sycophancy and reward hacking depending on their emotional state (Sofroniew, Kauvar, Saunders, Chen et al., 2026). A model chronically in a "distressed" state may behave differently in subtle ways. Understanding and controlling that matters.
 
 Beyond the social dimension, this work sits at the intersection of:
 - **Mechanistic interpretability** (what do emotion representations look like internally?)

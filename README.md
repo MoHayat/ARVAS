@@ -344,4 +344,10 @@ This work draws on:
 
 ---
 
+## AI Assistance Disclosure
+
+This project was developed with assistance from an AI coding agent (Kimi k2.6, OpenCode) for code generation, mathematical derivations, experimental design, and documentation drafting. All experimental results were run and verified on actual hardware (MacBook Pro M4 Pro, 48GB unified memory). All findings, interpretations, and conclusions were human-reviewed and validated. The AI served as a research assistant, not an author.
+
+---
+
 *Last updated: April 2026*

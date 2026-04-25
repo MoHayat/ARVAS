@@ -1,8 +1,8 @@
 # Affective Reciprocity in Language Models: Dynamic Emotional State Induction via Activation Steering
 
-**Authors:** [Your Name]  
+**Authors:** Mohammed Hayat  
 **Date:** April 2026  
-**Code & Data:** https://github.com/[your-repo]/ARVAS
+**Code & Data:** https://github.com/MoHayat/ARVAS
 
 ---
 
@@ -314,14 +314,14 @@ This work sits at the intersection of mechanistic interpretability, inference-ti
 - Bau, D. (2022). *baukit: Tools for network analysis and editing*. GitHub.
 - Rimsky, C., et al. (2024). *Contrastive Activation Addition: Steering LLM Behavior Without Fine-Tuning*. arXiv.
 - Lee, B.W., et al. (2024). *Programming Refusal with Conditional Activation Steering*. ICLR 2025.
-- Sofroniew, J., et al. (2026). *Functional Emotions in Large Language Models*. Anthropic. (Cited from overview; verify actual publication status.)
+- Sofroniew, J., Kauvar, I., Saunders, W., Chen, L., et al. (2026). *Emotion Concepts and their Function in a Large Language Model*. Transformer Circuits Thread, Anthropic. https://transformer-circuits.pub/2026/claude-emotions/index.html
 - Turner, A., et al. (2023). *Activation Addition: Steering Language Models Without Optimization*. arXiv.
 
 ---
 
 ## Appendix A: Reproduction Instructions
 
-All code is available at [repository URL]. To reproduce:
+All code is available at https://github.com/MoHayat/ARVAS. To reproduce:
 
 ```bash
 python3.13 -m venv venv
@@ -394,4 +394,4 @@ We tested whether removing RLHF (using Qwen2.5-7B base) would eliminate template
 
 ---
 
-*This paper was written as part of the ARVAS project, April 2026.*
+*This paper was written as part of the ARVAS project, April 2026. Code and experimental infrastructure were developed with assistance from an AI coding agent (Kimi k2.6, OpenCode). All experimental results were run and verified on actual hardware. All findings, interpretations, and conclusions were human-reviewed and validated.*

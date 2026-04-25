@@ -174,4 +174,4 @@ The model doesn't have feelings. But it can have something that functions like t
 
 ---
 
-*Built with PyTorch, HuggingFace Transformers, and baukit. All experiments run on a MacBook Pro M4 Pro with 48GB unified memory. Full code at [repository URL].*
+*Built with PyTorch, HuggingFace Transformers, and baukit. All experiments run on a MacBook Pro M4 Pro with 48GB unified memory. Full code at https://github.com/MoHayat/ARVAS. Code and experimental infrastructure were developed with assistance from an AI coding agent (Kimi k2.6, OpenCode). All experimental results were run and verified on actual hardware. All findings, interpretations, and conclusions were human-reviewed and validated.*
