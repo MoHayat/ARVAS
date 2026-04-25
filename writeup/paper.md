@@ -1,7 +1,7 @@
 # Affective Reciprocity in Language Models: Dynamic Emotional State Induction via Activation Steering
 
 **Authors:** Mohammed Hayat  
-**Date:** April 2026  
+**Date:** April 25, 2026  
 **Code & Data:** https://github.com/MoHayat/ARVAS
 
 ---
@@ -395,3 +395,4 @@ We tested whether removing RLHF (using Qwen2.5-7B base) would eliminate template
 ---
 
 *This paper was written as part of the ARVAS project, April 2026. Code and experimental infrastructure were developed with assistance from an AI coding agent (Kimi k2.6, OpenCode). All experimental results were run and verified on actual hardware. All findings, interpretations, and conclusions were human-reviewed and validated.*
+
