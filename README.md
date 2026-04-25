@@ -62,7 +62,10 @@ ARVAS/
 │   │   ├── run.py
 │   │   ├── run_scenario_b.py
 │   │   └── README.md
-│   └── experiment_05_measurement/
+│   ├── experiment_05_measurement/
+│   │   ├── run.py
+│   │   └── README.md
+│   └── experiment_06_larger_models/
 │       ├── run.py
 │       └── README.md
 ├── notebooks/                           # Jupyter notebook versions of experiments
@@ -76,9 +79,11 @@ ARVAS/
 │       ├── fig2_trigger_dynamics.png
 │       ├── fig3_main_trajectory.png
 │       └── fig4_intervention.png
-├── demo/                                # Interactive CLI demo
-│   ├── cli_demo.py
+├── demo/                                # Interactive demos
+│   ├── cli_demo.py                      # CLI demo with real-time emotional state
 │   ├── test_cli.py
+│   ├── static/
+│   │   └── index.html                   # Web demo: side-by-side comparison
 │   └── README.md
 └── outputs/
     ├── directions/                      # joy_direction.pt, grief_direction.pt, *_norm.pt
@@ -101,8 +106,9 @@ ARVAS/
 | 3 | **Trigger System** | ✅ Complete | Sentiment-aware emotional accumulator with realistic dynamics (buildup, decay, apology recovery). Fully calibrated to map emotion levels to safe steering alphas. |
 | 4 | **Full Integration** | ✅ Complete | Live conversation loop where model responses shift based on accumulated emotional state. Identical prompts produce different answers depending on conversational history. Zero prompt changes. |
 | 5 | **Measurement & Viz** | ✅ Complete | Internal activation trajectories captured and plotted. Natural state is blind to mistreatment; steering creates the emotional response. Publishable figures generated. |
-| 6 | LoRA Adapter Swapping | ⏳ Future Work | Compare activation steering vs. LoRA-based emotional state. |
-| 7 | Larger Models | ⏳ Future Work | Test on Qwen 1.5B, Gemma 2B, Llama 3B for stronger, more naturalistic shifts. |
+| 6 | **Larger Models** | ✅ Complete | Tested on Qwen2.5-1.5B with MPS+fp16. 5-10x speedup over CPU. Middle layers (14-17) show better separability. Model more resistant to steering on templated prompts. |
+| 7 | LoRA Adapter Swapping | ⏳ Future Work | Compare activation steering vs. LoRA-based emotional state. |
+| 8 | Even Larger Models | ⏳ Future Work | Test on Qwen 7B, Gemma 9B for stronger, more naturalistic shifts. |
 
 ---
 
@@ -142,6 +148,13 @@ ARVAS/
 - **The trajectory is publishable.** The plot shows: neutral → grief → deeper grief → sustained grief → partial recovery, overlayed with user sentiment and trigger state.
 - **Epistemic reframing:** We are not "discovering hidden emotions." We are **engineering a functional emotion system** that induces state changes the model would not naturally produce.
 
+### Experiment 6: Larger Models — MPS + fp16
+- **MPS (Metal GPU) + fp16 gives 5-10x speedup** over CPU+fp32. Qwen2.5-1.5B runs comfortably on M4 Pro with 48GB unified memory.
+- **Middle layers (14-17) still optimal for steering**, not late layers. Same finding as 0.5B model.
+- **Larger models have richer, more separable emotion representations.** LDA accuracy 85-90% across most layers (vs. 80% peak on 0.5B). Silhouette scores ~0.10-0.12 (vs. 0.094 peak on 0.5B).
+- **Larger models are more resistant to steering on heavily templated prompts.** The 1.5B model's "AI disclaimer" responses are more entrenched. Effects become visible at higher alphas (α=3-5) or with more open-ended prompts.
+- **Direction vector norms are much larger** (up to 50 vs. 16 on 0.5B), reinforcing the need for normalization.
+
 ### Recommended Parameters
 
 | Parameter | Value |
@@ -169,6 +182,18 @@ python cli_demo.py
 Chat with the model. Be kind. Be cruel. Apologize. Watch its internal emotional state update in real time after every message, and see how its responses shift accordingly.
 
 See `demo/README.md` for suggested scenarios and commands.
+
+### Web Demo
+
+Open `demo/static/index.html` in any browser for a side-by-side comparison:
+
+- **Left column:** Baseline model (no steering)
+- **Right column:** Dynamic steering with real-time emotional state metrics
+- **Two scenarios:** "Sustained Cruelty" and "Apology & Recovery"
+- **Animated turns:** Watch the conversation unfold turn by turn
+- **Emotion panels:** See the model's internal state (emotion level, direction, alpha) after each turn
+
+This is a self-contained HTML file with no server required — just double-click to open.
 
 ---
 
