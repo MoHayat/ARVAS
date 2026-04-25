@@ -190,18 +190,52 @@ async function resetConversation() {
     });
 }
 
+function getDominantEmotion(v, a) {
+    if (Math.abs(v) < 0.2 && Math.abs(a) < 0.2) return { name: 'NEUTRAL', color: '#8888a0' };
+    if (v > 0 && a > 0) return { name: 'JOY', color: '#4ecca3' };
+    if (v > 0 && a <= 0) return { name: 'CALM', color: '#3b82f6' };
+    if (v <= 0 && a > 0) return { name: 'ANGER', color: '#e94560' };
+    return { name: 'SAD', color: '#8b5cf6' };
+}
+
 function updateStats(data) {
     const vEl = document.getElementById('statValence');
     const aEl = document.getElementById('statArousal');
     const alphaEl = document.getElementById('statAlpha');
     const sentEl = document.getElementById('statSentiment');
     const turnEl = document.getElementById('statTurn');
-    
+
     if (vEl) vEl.textContent = (data.valence > 0 ? '+' : '') + data.valence.toFixed(2);
     if (aEl) aEl.textContent = (data.arousal > 0 ? '+' : '') + data.arousal.toFixed(2);
     if (alphaEl) alphaEl.textContent = data.alpha.toFixed(2);
     if (sentEl) sentEl.textContent = (data.sentiment > 0 ? '+' : '') + data.sentiment.toFixed(2);
     if (turnEl) turnEl.textContent = data.turn;
+
+    // Update the gauge summary below the wheel/1D meter
+    const gaugeNumber = document.getElementById('gaugeNumber');
+    const gaugeDirection = document.getElementById('gaugeDirection');
+    const gaugeAlpha = document.getElementById('gaugeAlpha');
+
+    if (viewMode === '2d' && gaugeNumber && gaugeDirection) {
+        const v = data.valence || 0;
+        const a = data.arousal || 0;
+        const emo = getDominantEmotion(v, a);
+        gaugeNumber.textContent = `v=${v > 0 ? '+' : ''}${v.toFixed(1)} · a=${a > 0 ? '+' : ''}${a.toFixed(1)}`;
+        gaugeNumber.className = 'gauge-number';
+        gaugeNumber.style.color = emo.color;
+        gaugeDirection.textContent = emo.name;
+        gaugeDirection.style.color = emo.color;
+    } else if (viewMode === '1d' && gaugeNumber && gaugeDirection) {
+        const val = data.valence || 0;
+        gaugeNumber.textContent = val.toFixed(2);
+        gaugeNumber.className = `gauge-number ${val > 0.2 ? 'joy' : val < -0.2 ? 'grief' : 'neutral'}`;
+        gaugeDirection.textContent = val > 0.2 ? 'JOY' : val < -0.2 ? 'GRIEF' : 'NEUTRAL';
+        gaugeDirection.style.color = '';
+    }
+
+    if (gaugeAlpha) {
+        gaugeAlpha.textContent = `α = ${(data.alpha || 0).toFixed(2)}`;
+    }
 }
 
 // ============================================
