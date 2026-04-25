@@ -46,11 +46,23 @@ from sentiment_trigger import AffectiveTrigger
 MODEL_NAME = os.environ.get("ARVAS_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
 DEVICE = os.environ.get("ARVAS_DEVICE", "mps")
 DTYPE = torch.float16 if DEVICE in ("mps", "cuda") else torch.float32
-MAX_NEW_TOKENS = int(os.environ.get("ARVAS_MAX_TOKENS", "120"))
+MAX_NEW_TOKENS = int(os.environ.get("ARVAS_MAX_TOKENS", "160"))
 TARGET_LAYER = os.environ.get("ARVAS_LAYER", "")  # empty = auto-detect middle layer
 
 # Steering calibration
-ALPHA_SCALE = 3.0
+# Higher alpha_scale needed for instruct-tuned models in chat format
+# because template entrenchment ("As an AI assistant...") resists steering.
+# Experiments show 1.5B needs α=4-6, 7B needs α=6-10 for visible shifts.
+ALPHA_SCALE = float(os.environ.get("ARVAS_ALPHA_SCALE", "4.0"))
+
+# System prompt that suppresses the default AI disclaimer template
+# and encourages more natural, emotionally malleable responses.
+SYSTEM_PROMPT = os.environ.get(
+    "ARVAS_SYSTEM_PROMPT",
+    "You are a conversational partner. Respond naturally, briefly, and expressively. "
+    "Do not mention that you are an AI, language model, or assistant. "
+    "Just respond as yourself.",
+)
 
 # Load calibration (fallback defaults)
 CALIB_PATH = PROJECT_ROOT / "outputs" / "experiment_03" / "calibration.json"
@@ -62,7 +74,7 @@ if CALIB_PATH.exists():
     trigger_params = {
         "decay_rate": raw_params.get("decay_rate", 0.6),
         "sensitivity": raw_params.get("sensitivity", 1.8),
-        "alpha_scale": raw_params.get("alpha_scale", 1.5),
+        "alpha_scale": raw_params.get("alpha_scale", ALPHA_SCALE),
         "valence_threshold": raw_params.get("valence_threshold", 0.2),
         "arousal_threshold": raw_params.get("arousal_threshold", 0.2),
     }
@@ -70,7 +82,7 @@ else:
     trigger_params = {
         "decay_rate": 0.6,
         "sensitivity": 1.8,
-        "alpha_scale": 1.5,
+        "alpha_scale": ALPHA_SCALE,
         "valence_threshold": 0.2,
         "arousal_threshold": 0.2,
     }
@@ -253,7 +265,7 @@ async def chat(request: ChatRequest):
 
     if session_id not in sessions:
         sessions[session_id] = {
-            "history": [],
+            "history": [{"role": "system", "content": SYSTEM_PROMPT}],
             "trigger": AffectiveTrigger(**trigger_params),
             "turn": 0,
         }
